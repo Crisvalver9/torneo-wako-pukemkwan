@@ -33,8 +33,9 @@
   .col{display:flex; flex-direction:column; height:100%;}
   .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 24px; gap:26px;}
   .eyebrow{font-size:11px; letter-spacing:.3em; color:var(--muted); text-transform:uppercase; text-align:center;}
-  .logo{display:block; width:88px; height:88px; margin:0 auto 4px; border-radius:50%; object-fit:cover; box-shadow:0 0 0 2px var(--line);}
-  .logo-sm{display:block; width:34px; height:34px; margin:0 auto 6px; border-radius:50%; object-fit:cover; box-shadow:0 0 0 1.5px var(--line);}
+  .logo-wrap{width:88px; height:88px; margin:0 auto 4px; border-radius:50%; overflow:hidden; box-shadow:0 0 0 2px var(--line); background:#000;}
+  .logo-wrap.sm{width:34px; height:34px; margin:0 auto 6px; box-shadow:0 0 0 1.5px var(--line);}
+  .logo-wrap img{display:block; width:100%; height:100%; object-fit:cover; transform:scale(1.34);}
   h1{font-size:28px; font-weight:900; letter-spacing:-0.02em; text-align:center; margin:6px 0 0;}
   p.sub{color:var(--muted); font-size:13.5px; text-align:center; margin:4px 0 0;}
   .stack{width:100%; max-width:340px; display:flex; flex-direction:column; gap:11px; margin:0 auto;}
@@ -80,11 +81,15 @@
   .roundblock{margin:0 16px 18px;}
   .roundblock h3{font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 8px; padding-top:10px; border-top:1px solid var(--line);}
   .matchcard{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:9px;}
-  .matchrow .fname{font-size:14.5px; font-weight:700;}
-  .matchrow .fname.win{color:var(--green);}
-  .matchrow .fname.dim{color:var(--muted2);}
-  .matchvs{text-align:center; color:var(--muted2); font-size:11px; padding:1px 0;}
-  .matchstatus{font-size:11px; color:var(--muted); margin-top:6px;}
+  .matchup{display:flex; align-items:center; gap:8px;}
+  .mfighter{flex:1; min-width:0; border-left:3px solid var(--red-l); padding-left:9px;}
+  .mfighter.side-b{border-left:none; border-right:3px solid var(--blue-l); padding-left:0; padding-right:9px; text-align:right;}
+  .mfighter .corner{display:block; font-size:9.5px; color:var(--muted2); letter-spacing:.14em; text-transform:uppercase; margin-bottom:1px;}
+  .mfighter .fname{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14.5px; font-weight:700;}
+  .mfighter .fname.win{color:var(--green);}
+  .mfighter .fname.dim{color:var(--muted2); font-weight:400;}
+  .matchvs{flex-shrink:0; color:var(--muted2); font-size:10px; font-weight:800; letter-spacing:.08em; background:var(--panel2); border-radius:20px; padding:4px 9px;}
+  .matchstatus{font-size:11px; color:var(--muted); margin-top:8px; text-align:center;}
   .matchactions{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
 
   .judgegrid{display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:320px;}
@@ -161,7 +166,7 @@ const LOGO_SRC = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxM
 const CALL_WINDOW_MS = 3500;
 const POLL_MS = 1200;
 
-/* ------------------------- categorias oficiales WAKO ------------------------- */
+/* ------------------------- categorías oficiales WAKO ------------------------- */
 const WAKO_DIVISIONS = [
   {key:'CH', label:'Children (7-9 anos)'},
   {key:'YC', label:'Younger Cadets (10-12 anos)'},
@@ -252,11 +257,11 @@ function emptyCategory(id, form){
   };
 }
 function autoName(form){
-  const div = divisionLabel(form.divisionEdad) || 'Categoria';
+  const div = divisionLabel(form.divisionEdad) || 'Categoría';
   const sexo = form.sexo === 'F' ? 'Femenino' : 'Masculino';
-  const cint = form.cinturon === 'negro' ? 'Cinturon Negro' : 'Cinturon Color';
+  const cint = form.cinturon === 'negro' ? 'Cinturón Negro' : 'Cinturón Color';
   const parts = [div, sexo, form.peso, cint].filter(Boolean);
-  return parts.join(' \u00b7 ') || 'Nueva categoria';
+  return parts.join(' \u00b7 ') || 'Nueva categoría';
 }
 function pushCatLog(cat, text){
   const log = [{ts:Date.now(), text}, ...(cat.log||[])].slice(0,40);
@@ -457,7 +462,7 @@ function createCategory(){
   goTo('mesa_category', {catId:id});
 }
 function deleteCategory(catId){
-  if (!confirm('\u00bfEliminar esta categoria y toda su llave? Esta accion no se puede deshacer.')) return;
+  if (!confirm('\u00bfEliminar esta categor\u00eda y toda su llave? Esta acci\u00f3n no se puede deshacer.')) return;
   const cats = {...state.torneo.categories};
   delete cats[catId];
   writeTorneo({...state.torneo, categories:cats});
@@ -507,7 +512,7 @@ function declareWinner(catId, matchId, side){
   if (!m || !m.A || !m.B) return;
   const winnerName = side==='A' ? m.A.name : m.B.name;
   let next = {...cat, results:{...cat.results, [matchId]:{winner:side, scoreA:null, scoreB:null, manual:true}}};
-  next = pushCatLog(next, `${matchId}: ${winnerName} avanza (decision manual)`);
+  next = pushCatLog(next, `${matchId}: ${winnerName} avanza (decisión manual)`);
   writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: next}});
 }
 function startLive(catId, matchId){
@@ -528,7 +533,7 @@ function finalizeLive(catId, forcedWinner, reason){
   }
   const winnerName = winnerSide==='A' ? live.fighterA.name : live.fighterB.name;
   let next = {...cat, live:null, results:{...cat.results, [live.matchId]:{winner:winnerSide, scoreA:live.scoreRed, scoreB:live.scoreBlue, manual:!!reason, disq:reason==='DISQ'}}};
-  next = pushCatLog(next, reason==='DISQ' ? `${live.matchId}: ${winnerName} gana por descalificacion` : `${live.matchId}: ${winnerName} gana ${live.scoreRed}-${live.scoreBlue}`);
+  next = pushCatLog(next, reason==='DISQ' ? `${live.matchId}: ${winnerName} gana por descalificación` : `${live.matchId}: ${winnerName} gana ${live.scoreRed}-${live.scoreBlue}`);
   writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: next}});
 }
 
@@ -567,8 +572,8 @@ function jefeUpdate(mutator){
   const live = mutator({...cat.live});
   writeTorneo({...state.torneo, categories:{...state.torneo.categories, [cat.id]:{...cat, live}}});
 }
-/* En Point Fighting los 3 jueces senalan en el tatami (segun reglamento) y es el
-   Jefe de Mesa quien carga el punto aqui - no hay voto por celular. En modalidades
+/* En Point Fighting los 3 jueces señalan en el tatami (según reglamento) y es el
+   Jefe de Mesa quien carga el punto aquí - no hay voto por celular. En modalidades
    continuas (LC/KL) cada juez ya suma su propio marcador (ver applyVote), y esto
    queda ademas como correccion manual de mesa por si hay un error. */
 function adjustScore(color, delta){
@@ -584,13 +589,13 @@ function adjustScore(color, delta){
     finalizeLive(cat.id, live.scoreRed>live.scoreBlue?'A':'B');
   }
 }
-/* Cierre de combate segun el tiempo se agota en el ultimo asalto (reglamento WAKO):
-   - Point Fighting (Art. 6.2): gana quien tenga mas puntos; si hay empate, 1 minuto
+/* Cierre de combate según el tiempo se agota en el último asalto (reglamento WAKO):
+   - Point Fighting (Art. 6.2): gana quien tenga más puntos; si hay empate, 1 minuto
      extra y luego "muerte subita" (el primer punto que se anota gana).
-   - Light Contact / Kick Light (Art. 6.4): gana quien tenga mas puntos; si hay empate
-     total, el reglamento pide que los jueces decidan por criterio (mas activo, mas
-     patadas, mejor defensa/tecnica) - eso no se puede automatizar, queda para que la
-     mesa lo resuelva con el boton de asignacion manual. */
+   - Light Contact / Kick Light (Art. 6.4): gana quien tenga más puntos; si hay empate
+     total, el reglamento pide que los jueces decidan por criterio (más activo, más
+     patadas, mejor defensa/técnica) - eso no se puede automatizar, queda para que la
+     mesa lo resuelva con el botón de asignación manual. */
 function autoFinalizeLive(catId){
   const cat = state.torneo.categories[catId];
   const live = cat && cat.live; if (!live) return;
@@ -599,11 +604,11 @@ function autoFinalizeLive(catId){
     return;
   }
   if (live.mode === 'PF' && !live.suddenDeath){
-    jefeUpdate(l => pushLiveLog({...l, timerRunning:false, timerEndsAt:null, timerRemainingMs:60000, suddenDeath:true}, 'Empate - tiempo extra de 1 min, gana el primer punto (muerte subita)'));
+    jefeUpdate(l => pushLiveLog({...l, timerRunning:false, timerEndsAt:null, timerRemainingMs:60000, suddenDeath:true}, 'Empate - tiempo extra de 1 min, gana el primer punto (muerte súbita)'));
     return;
   }
   if (live.mode !== 'PF' && !live.tiedFinal){
-    jefeUpdate(l => pushLiveLog({...l, timerRunning:false, tiedFinal:true}, 'Empate total - definan ganador segun criterio de jueces (mas activo, mas patadas, mejor defensa/tecnica)'));
+    jefeUpdate(l => pushLiveLog({...l, timerRunning:false, tiedFinal:true}, 'Empate total - definan ganador según criterio de jueces (más activo, más patadas, mejor defensa/técnica)'));
   }
 }
 function checkTimeExpiry(){
@@ -650,7 +655,7 @@ function addFoul(color){
     live[scoreField] = Math.max(0, live[scoreField] - 1);
     live = pushLiveLog(live, `Advertencia ${count}/4 a ${label} - menos 1 punto`);
   } else if (count >= 4){
-    live = pushLiveLog(live, `4ta advertencia a ${label} - descalificacion`);
+    live = pushLiveLog(live, `4ta advertencia a ${label} - descalificación`);
   } else {
     live = pushLiveLog(live, `Advertencia ${count}/4 a ${label}`);
   }
@@ -678,7 +683,7 @@ function resetLiveScores(){
 
 /* --------------------------------- utilidades UI --------------------------------- */
 function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-/* PF = combate continuo se detiene, jueces marcan tecnica por tecnica (mayoria).
+/* PF = combate continuo se detiene, jueces marcan técnica por técnica (mayoría).
    LC/KL = combate continuo sin pausas, cada juez suma su propio marcador. */
 const MODALIDAD_LABELS = { PF:'Point Fighting', LC:'Light Contact', KL:'Kick Light' };
 function modalidadLabel(m){ return MODALIDAD_LABELS[m] || m; }
@@ -687,7 +692,7 @@ function catBadges(cat){
     `<span class="badge">${escapeHtml(divisionLabel(cat.divisionEdad))}</span>`+
     `<span class="badge">${cat.sexo==='F'?'Femenino':'Masculino'}</span>`+
     (cat.peso?`<span class="badge">${escapeHtml(cat.peso)}</span>`:'')+
-    `<span class="badge">${cat.cinturon==='negro'?'Cinturon Negro':'Cinturon Color'}</span>`+
+    `<span class="badge">${cat.cinturon==='negro'?'Cinturón Negro':'Cinturón Color'}</span>`+
     `<span class="badge">${cat.numRounds}x${fmtTime(cat.roundDuration*1000)}</span>`+
     `<span class="badge ${cat.bracketClosed?'closed':'open'}">${cat.bracketClosed?'Llave cerrada':'Inscripciones abiertas'}</span>`;
 }
@@ -721,16 +726,16 @@ function renderHome(){
   <div class="col">${belt()}
     <div class="center">
       <div>
-        <img src="${LOGO_SRC}" alt="Academia Pukem Kwan" class="logo" />
+        <div class="logo-wrap"><img src="${LOGO_SRC}" alt="Academia Pukem Kwan" /></div>
         <div class="eyebrow">Academia Pukem Kwan &middot; Castro</div>
         <h1>TORNEO WAKO</h1>
         <p class="sub">Llaves &middot; Point Fighting &middot; Light Contact</p>
       </div>
       <div class="stack">
-        <button class="btn btn-white" onclick="goTo('mesa_home')">Mesa (categorias y llaves)</button>
+        <button class="btn btn-white" onclick="goTo('mesa_home')">Mesa (categorías y llaves)</button>
         <button class="btn btn-amber" onclick="goTo('jefe_selectCategory')">Jefe de mesa (control en vivo)</button>
         <button class="btn btn-dark" onclick="goTo('judge_selectCategory')">Unirme como juez</button>
-        <button class="btn btn-dark" onclick="goTo('display_selectCategory')">Pantalla publica</button>
+        <button class="btn btn-dark" onclick="goTo('display_selectCategory')">Pantalla pública</button>
       </div>
     </div>
   ${belt()}</div>`;
@@ -740,9 +745,9 @@ function renderMesaHome(){
   const cats = Object.values((state.torneo && state.torneo.categories)||{}).sort((a,b)=>a.createdAt-b.createdAt);
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Categorias</h2><button class="btn-sm on" onclick="goTo('mesa_newCategory')">+ Nueva</button></div>
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Categorías</h2><button class="btn-sm on" onclick="goTo('mesa_newCategory')">+ Nueva</button></div>
     <div class="scroll">
-      ${cats.length===0 ? `<div class="emptylist">Aun no hay categorias.<br>Crea la primera con "+ Nueva".</div>` :
+      ${cats.length===0 ? `<div class="emptylist">Aún no hay categorías.<br>Crea la primera con "+ Nueva".</div>` :
         cats.map(cat=>`
           <div class="catcard" onclick="goTo('mesa_category',{catId:'${cat.id}'})">
             <div class="nm">${escapeHtml(cat.nombre)} ${cat.live?'<span class="livepill">EN VIVO</span>':''}</div>
@@ -761,8 +766,8 @@ function renderNewCategory(){
   <div class="col">
     <div class="scroll form">
       <button class="link" onclick="goTo('mesa_home')" style="margin-bottom:14px;">&larr; volver</button>
-      <h2 style="font-size:21px; font-weight:900; margin:0 0 4px;">Nueva categoria</h2>
-      <div class="hint" style="margin-top:2px;">Divisiones y pesos segun reglamento oficial WAKO (Tatami Rules, Cap. 2)</div>
+      <h2 style="font-size:21px; font-weight:900; margin:0 0 4px;">Nueva categoría</h2>
+      <div class="hint" style="margin-top:2px;">Divisiones y pesos según reglamento oficial WAKO (Tatami Rules, Cap. 2)</div>
 
       <label>Modalidad</label>
       <div class="grid3">
@@ -770,7 +775,7 @@ function renderNewCategory(){
         <button class="opt ${f.modalidad==='LC'?'active':''}" onclick="newCatForm.modalidad='LC'; render()">Light Contact</button>
         <button class="opt ${f.modalidad==='KL'?'active':''}" onclick="newCatForm.modalidad='KL'; render()">Kick Light</button>
       </div>
-      ${f.modalidad==='PF' ? `<div class="hint" style="margin:-8px 0 14px;">Los 3 jueces senalan en el tatami; el Jefe de Mesa carga el punto en el sistema.</div>` :
+      ${f.modalidad==='PF' ? `<div class="hint" style="margin:-8px 0 14px;">Los 3 jueces señalan en el tatami; el Jefe de Mesa carga el punto en el sistema.</div>` :
         `<div class="hint" style="margin:-8px 0 14px;">Cada juez anota su propio marcador en tiempo real desde su celular; la mesa puede corregir si hace falta.</div>`}
 
       <label>Sexo</label>
@@ -779,25 +784,25 @@ function renderNewCategory(){
         <button class="opt ${f.sexo==='F'?'active':''}" onclick="newCatForm.sexo='F'; newCatForm.peso=''; render()">Femenino</button>
       </div>
 
-      <label>Division de edad (WAKO)</label>
+      <label>División de edad (WAKO)</label>
       <select class="field" onchange="onDivisionChange(this.value)">
-        <option value="">Selecciona division...</option>
+        <option value="">Selecciona división...</option>
         ${WAKO_DIVISIONS.map(d=>`<option value="${d.key}" ${f.divisionEdad===d.key?'selected':''}>${d.label}</option>`).join('')}
       </select>
 
-      <label>Categoria de peso ${f.divisionEdad?'':'(elige division primero)'}</label>
+      <label>Categoría de peso ${f.divisionEdad?'':'(elige división primero)'}</label>
       <select class="field" onchange="newCatForm.peso=this.value" ${!f.divisionEdad?'disabled':''}>
         <option value="">Selecciona peso...</option>
         ${pesoOptions.map(p=>`<option value="${p}" ${f.peso===p?'selected':''}>${p}</option>`).join('')}
       </select>
 
-      <label>Cinturon (criterio del club, no es division oficial WAKO)</label>
+      <label>Cinturón (criterio del club, no es división oficial WAKO)</label>
       <div class="grid2">
         <button class="opt ${f.cinturon==='color'?'active':''}" onclick="newCatForm.cinturon='color'; render()">Color</button>
         <button class="opt ${f.cinturon==='negro'?'active':''}" onclick="newCatForm.cinturon='negro'; render()">Negro</button>
       </div>
 
-      <label>Nombre de categoria (se autogenera, editable)</label>
+      <label>Nombre de categoría (se autogenera, editable)</label>
       <input class="field" value="${escapeHtml(f.nombre)}" oninput="newCatForm.nombre=this.value" placeholder="${escapeHtml(autoName(f))}" />
 
       <label>Cantidad de jueces</label>
@@ -812,13 +817,13 @@ function renderNewCategory(){
         <button class="opt ${f.numRounds===3?'active':''}" onclick="newCatForm.numRounds=3; render()">3 asaltos</button>
       </div>
 
-      <label>Duracion de cada asalto</label>
+      <label>Duración de cada asalto</label>
       <div class="grid4">
         ${[60,90,120,180].map(s=>`<button class="opt ${f.roundDuration===s?'active':''}" style="font-size:12px; padding:9px;" onclick="newCatForm.roundDuration=${s}; render()">${fmtTime(s*1000)}</button>`).join('')}
       </div>
       <div class="hint">Por defecto 1:30 (formato Younger Cadets / open tournament). Ajustable libremente por el jefe de mesa durante el combate.</div>
 
-      <button class="btn btn-white" onclick="createCategory()">Crear categoria</button>
+      <button class="btn btn-white" onclick="createCategory()">Crear categoría</button>
       <div style="height:30px;"></div>
     </div>
   </div>`;
@@ -835,12 +840,10 @@ function onDivisionChange(key){
 
 function renderMesaCategory(){
   const cat = currentCat();
-  if (!cat) return renderCenterMsg('Categoria no encontrada.');
+  if (!cat) return renderCenterMsg('Categoría no encontrada.');
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goTo('mesa_home')">&larr; categorias</button>
-      <div style="text-align:right;"><button class="link" onclick="deleteCategory('${cat.id}')" style="color:#f87171;">eliminar</button></div>
-    </div>
+    <div class="topbar"><button class="link" onclick="goTo('mesa_home')">&larr; categorías</button><span></span><button class="link" onclick="deleteCategory('${cat.id}')" style="color:#f87171;">eliminar</button></div>
     <div style="padding:0 16px 10px;">
       <div style="font-weight:900; font-size:18px;">${escapeHtml(cat.nombre)}</div>
       <div style="margin-top:6px;">${catBadges(cat)}</div>
@@ -875,21 +878,28 @@ function renderRosterSection(cat){
     </div>
     <div style="padding:14px 16px 0;">
       <button class="btn btn-green" onclick="closeBracket('${cat.id}')" ${cat.roster.length<2?'disabled style="opacity:.4;"':''}>Cerrar inscripciones y generar llave</button>
-      ${cat.roster.length<2 ? `<div class="matchstatus" style="text-align:center; margin-top:6px;">Minimo 2 luchadores para generar la llave.</div>` : ''}
+      ${cat.roster.length<2 ? `<div class="matchstatus" style="text-align:center; margin-top:6px;">Mínimo 2 luchadores para generar la llave.</div>` : ''}
     </div>`;
 }
 
+/* Fila "Rojo vs Azul" compartida entre la vista de mesa y la pantalla pública -
+   mismo lenguaje visual (colores de esquina) que el marcador en vivo. */
+function matchupHtml(fA, fB, winnerSide, vsLabel){
+  const side = (f, isWinner, sideClass, corner) => f
+    ? `<div class="mfighter ${sideClass}"><span class="corner">${corner}</span><span class="fname ${isWinner?'win':''}">${escapeHtml(f.name)}</span></div>`
+    : `<div class="mfighter ${sideClass}"><span class="fname dim">-</span></div>`;
+  return `<div class="matchup">${side(fA, winnerSide==='A', 'side-a', 'Rojo')}<div class="matchvs">${vsLabel}</div>${side(fB, winnerSide==='B', 'side-b', 'Azul')}</div>`;
+}
 function renderMatchCard(cat, m){
   if (m.status==='empty') return '';
-  const nameHtml = (f, isWinner) => f ? `<span class="fname ${isWinner?'win':''}">${escapeHtml(f.name)}</span>` : `<span class="fname dim">-</span>`;
   let body = '';
   if (m.status==='bye'){
-    body = `${nameHtml(m.A, true)}<div class="matchvs">bye</div>${m.B?nameHtml(m.B,false):''}
-      <div class="matchstatus">${escapeHtml((m.winner||{}).name||'')} avanza automaticamente</div>`;
+    body = `${matchupHtml(m.A, m.B, 'A', 'BYE')}
+      <div class="matchstatus">${escapeHtml((m.winner||{}).name||'')} avanza automáticamente</div>`;
   } else if (m.status==='waiting'){
     body = `<div class="matchstatus">Esperando resultado de la ronda anterior</div>`;
   } else if (m.status==='pending'){
-    body = `${nameHtml(m.A,false)}<div class="matchvs">vs</div>${nameHtml(m.B,false)}
+    body = `${matchupHtml(m.A, m.B, null, 'VS')}
       <div class="matchactions">
         <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','A')">gana ${escapeHtml(m.A.name)}</button>
         <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','B')">gana ${escapeHtml(m.B.name)}</button>
@@ -897,12 +907,12 @@ function renderMatchCard(cat, m){
       </div>`;
   } else if (m.status==='live'){
     const live = cat.live;
-    body = `${nameHtml(m.A,false)}<div class="matchvs">vs</div>${nameHtml(m.B,false)}
+    body = `${matchupHtml(m.A, m.B, null, 'EN VIVO')}
       <div class="matchstatus">en vivo - asalto ${live?live.round:1}/${live?live.roundsTotal:1} - marcador ${live?live.scoreRed:0}-${live?live.scoreBlue:0}</div>
       <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">ir a control de mesa</button></div>`;
   } else if (m.status==='done'){
-    body = `${nameHtml(m.A, m.winnerSide==='A')}<div class="matchvs">vs</div>${nameHtml(m.B, m.winnerSide==='B')}
-      <div class="matchstatus">${escapeHtml(m.winner.name)} gana${m.disq?' (descalificacion)':m.manual?' (decision manual)':` ${m.scoreA}-${m.scoreB}`}</div>`;
+    body = `${matchupHtml(m.A, m.B, m.winnerSide, 'VS')}
+      <div class="matchstatus">${escapeHtml(m.winner.name)} gana${m.disq?' (descalificación)':m.manual?' (decisión manual)':` ${m.scoreA}-${m.scoreB}`}</div>`;
   }
   return `<div class="matchcard">${body}</div>`;
 }
@@ -927,7 +937,7 @@ function renderJudgeSelectCategory(){
   <div class="col">
     <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Combates en vivo</h2><span></span></div>
     <div class="scroll">
-      ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo por el momento.<br>Pidele a mesa que inicie uno.</div>` :
+      ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo por el momento.<br>Pídele a mesa que inicie uno.</div>` :
         cats.map(c=>`
           <div class="picklistitem" onclick="goTo('judge_selectSlot',{catId:'${c.id}'})">
             <div><div class="nm">${escapeHtml(c.live.fighterA.name)} vs ${escapeHtml(c.live.fighterB.name)}</div>
@@ -940,13 +950,13 @@ function renderJudgeSelectCategory(){
 }
 function renderJudgeSelectSlot(){
   const cat = currentCat();
-  if (!cat || !cat.live) return renderCenterMsg('Este combate ya no esta en vivo.');
+  if (!cat || !cat.live) return renderCenterMsg('Este combate ya no está en vivo.');
   const n = cat.numJudges || 3;
   root.innerHTML = `
   <div class="col" style="align-items:center; justify-content:center; padding:0 24px; gap:22px;">
     <div style="text-align:center;">
       <div class="eyebrow">${escapeHtml(cat.live.fighterA.name)} vs ${escapeHtml(cat.live.fighterB.name)}</div>
-      <h2 style="margin-top:6px;">Que juez eres?</h2>
+      <h2 style="margin-top:6px;">¿Qué juez eres?</h2>
     </div>
     <div class="judgegrid">${[1,2,3,4].slice(0,n).map(k=>`<button class="judgebtn" onclick="joinAsJudge(${k})">${k}</button>`).join('')}</div>
     <button class="link" onclick="goTo('judge_selectCategory')">&larr; volver</button>
@@ -954,7 +964,7 @@ function renderJudgeSelectSlot(){
 }
 function renderJudgeVote(){
   const cat = currentCat();
-  if (!cat || !cat.live) return renderCenterMsg('Este combate ya finalizo o no esta disponible.');
+  if (!cat || !cat.live) return renderCenterMsg('Este combate ya finalizó o no está disponible.');
   const live = cat.live;
   const modeLabel = modalidadLabel(live.mode);
   const remaining = getRemainingMs(live);
@@ -964,7 +974,7 @@ function renderJudgeVote(){
       <div class="jtop" style="width:100%;"><span>Juez ${state.judgeId} &middot; asalto ${live.round}/${live.roundsTotal}</span><span style="text-transform:uppercase;">${modeLabel}</span></div>
       <div class="jscore"><span style="color:var(--red-l)">${live.scoreRed}</span><span style="color:var(--muted2); font-size:14px; font-weight:400;">vs</span><span style="color:var(--blue-l)">${live.scoreBlue}</span></div>
       <div class="eyebrow" style="margin-top:8px;">Point Fighting</div>
-      <p class="hint" style="max-width:320px;">En esta modalidad senalas el punto en el tatami como indica el reglamento (mano/paleta). El Jefe de Mesa carga el punto en el sistema, aqui no hay boton de voto.</p>
+      <p class="hint" style="max-width:320px;">En esta modalidad señalas el punto en el tatami como indica el reglamento (mano/paleta). El Jefe de Mesa carga el punto en el sistema, aquí no hay botón de voto.</p>
       <span style="font-family:monospace; font-size:22px;">${fmtTime(remaining)}</span>
       <div class="jbottom" style="position:static; margin-top:10px;"><button class="link" onclick="goHome()">salir</button><button class="link" onclick="goTo('display_view')">ver pantalla &rarr;</button></div>
     </div>`;
@@ -1011,7 +1021,7 @@ function renderJefeSelectCategory(){
 }
 function renderJefeControl(){
   const cat = currentCat();
-  if (!cat || !cat.live) return renderCenterMsg('Este combate ya no esta en vivo.');
+  if (!cat || !cat.live) return renderCenterMsg('Este combate ya no está en vivo.');
   const live = cat.live;
   const remaining = getRemainingMs(live);
   const modeLabel = modalidadLabel(live.mode);
@@ -1041,7 +1051,7 @@ function renderJefeControl(){
         </div>
       </div>
 
-      ${live.mode==='PF' ? `<div class="hint" style="text-align:center; margin:6px 0 0;">Los jueces senalan en el tatami - anota el punto aqui</div>` : `<div class="hint" style="text-align:center; margin:6px 0 0;">Cada juez anota desde su celular - usa esto solo para corregir</div>`}
+      ${live.mode==='PF' ? `<div class="hint" style="text-align:center; margin:6px 0 0;">Los jueces señalan en el tatami - anota el punto aquí</div>` : `<div class="hint" style="text-align:center; margin:6px 0 0;">Cada juez anota desde su celular - usa esto solo para corregir</div>`}
       <div class="dscores" style="min-height:190px;">
         <div class="dside left"><span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="fclub">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="score">${live.scoreRed}</span>
           <div class="scorerow"><button class="btn-sm ${live.mode==='PF'?'on':''}" onclick="adjustScore('red',1)">+1 punto</button>${live.scoreRed>0?`<button class="link" onclick="adjustScore('red',-1)">-1</button>`:''}</div>
@@ -1059,17 +1069,17 @@ function renderJefeControl(){
       <div class="dlog" style="padding:8px 16px;"><div class="lbl">Ultimos eventos</div><div class="items">${(live.log||[]).slice(0,6).map(l=>`<div>${escapeHtml(l.text)}</div>`).join('')}</div></div>
 
       <div style="padding:10px 16px; display:flex; flex-direction:column; gap:8px;">
-        ${live.tiedFinal ? `<div class="hint" style="margin:0 0 4px; text-align:center; color:#fecaca;">Empate total - reglamento: definan por mas activo, mas patadas, mejor defensa/tecnica</div>
+        ${live.tiedFinal ? `<div class="hint" style="margin:0 0 4px; text-align:center; color:#fecaca;">Empate total - reglamento: definan por más activo, más patadas, mejor defensa/técnica</div>
            <button class="btn btn-dark" onclick="finalizeLive('${cat.id}','A')">Gana ${escapeHtml(live.fighterA.name)} (Rojo)</button>
            <button class="btn btn-dark" onclick="finalizeLive('${cat.id}','B')">Gana ${escapeHtml(live.fighterB.name)} (Azul)</button>` :
-          `<div class="hint" style="text-align:center; margin:2px 0 0;">El combate se cierra solo al terminar el tiempo del ultimo asalto</div>
+          `<div class="hint" style="text-align:center; margin:2px 0 0;">El combate se cierra solo al terminar el tiempo del último asalto</div>
            <div class="warnrow" style="margin-top:2px;">
-             <span>Cerrar antes de tiempo (lesion, abandono, decision):</span>
+             <span>Cerrar antes de tiempo (lesión, abandono, decisión):</span>
              <button class="link" onclick="finalizeLive('${cat.id}','A')">gana Rojo</button>
              <button class="link" onclick="finalizeLive('${cat.id}','B')">gana Azul</button>
            </div>`}
         <button class="link" onclick="resetLiveScores()">reiniciar marcador y advertencias</button>
-        <button class="link" onclick="goTo('display_view')">ver pantalla publica &rarr;</button>
+        <button class="link" onclick="goTo('display_view')">ver pantalla pública &rarr;</button>
       </div>
       <div style="height:20px;"></div>
     </div>
@@ -1080,9 +1090,9 @@ function renderDisplaySelectCategory(){
   const cats = Object.values((state.torneo && state.torneo.categories)||{}).sort((a,b)=>a.createdAt-b.createdAt);
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Pantalla publica</h2><span></span></div>
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Pantalla pública</h2><span></span></div>
     <div class="scroll">
-      ${cats.length===0 ? `<div class="emptylist">Aun no hay categorias creadas.</div>` :
+      ${cats.length===0 ? `<div class="emptylist">Aún no hay categorías creadas.</div>` :
         cats.map(c=>`
           <div class="picklistitem" onclick="goTo('display_view',{catId:'${c.id}'})">
             <div><div class="nm">${escapeHtml(c.nombre)}</div><div class="meta">${(c.bracketClosed ? (c.slots||[]).filter(Boolean).length : c.roster.length)}/16 &middot; ${c.bracketClosed?'Llave cerrada':'Inscripciones abiertas'}</div></div>
@@ -1094,7 +1104,7 @@ function renderDisplaySelectCategory(){
 }
 function renderDisplayView(){
   const cat = currentCat();
-  if (!cat) return renderCenterMsg('Categoria no encontrada.');
+  if (!cat) return renderCenterMsg('Categoría no encontrada.');
   if (cat.live) return renderDisplayLive(cat);
   return renderDisplayBracket(cat);
 }
@@ -1104,7 +1114,7 @@ function renderDisplayLive(cat){
   const remaining = getRemainingMs(live);
   root.innerHTML = `
   <div class="col">${belt()}
-    <div class="dtitle"><img src="${LOGO_SRC}" alt="" class="logo-sm" /><div class="name">${escapeHtml(cat.nombre)}</div>
+    <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div>
       <div class="meta">Academia Pukem Kwan</div>
       <div style="margin-top:6px;">${catBadges(cat)}</div>
       ${live.suddenDeath ? `<div class="roundpill" style="background:#7f1d1d; color:#fecaca;">Tiempo extra - muerte subita</div>` : `<div class="roundpill">Asalto ${live.round} / ${live.roundsTotal}</div>`}
@@ -1121,33 +1131,37 @@ function renderDisplayLive(cat){
     </div>
     ${perJudgeBreakdown(live)}
     <div class="dlog"><div class="lbl">Ultimos eventos</div><div class="items">${(live.log||[]).slice(0,5).map(l=>`<div>${escapeHtml(l.text)}</div>`).join('')}</div></div>
-    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoria</button><button class="link" onclick="goHome()">salir</button></div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoría</button><button class="link" onclick="goHome()">salir</button></div>
   ${belt()}</div>`;
 }
 function renderDisplayBracket(cat){
   const rounds = buildBracket(cat);
   root.innerHTML = `
   <div class="col">${belt()}
-    <div class="dtitle"><img src="${LOGO_SRC}" alt="" class="logo-sm" /><div class="name">${escapeHtml(cat.nombre)}</div><div class="meta">Academia Pukem Kwan</div><div style="margin-top:6px;">${catBadges(cat)}</div></div>
+    <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div><div class="meta">Academia Pukem Kwan</div><div style="margin-top:6px;">${catBadges(cat)}</div></div>
     <div class="scroll">
-      ${!cat.bracketClosed ? `<div class="emptylist">Inscripciones abiertas - la llave aun no se ha generado.<br>${cat.roster.length} inscrito(s) hasta ahora.</div>` :
+      ${!cat.bracketClosed ? `<div class="emptylist">Inscripciones abiertas - la llave aún no se ha generado.<br>${cat.roster.length} inscrito(s) hasta ahora.</div>` :
         rounds.map(r=>`<div class="roundblock"><h3>${r.name}</h3>${r.matches.map(m=>renderMatchCardDisplay(m)).join('') || '<div class="matchstatus">-</div>'}</div>`).join('')}
       <div style="height:20px;"></div>
     </div>
-    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoria</button><button class="link" onclick="goHome()">salir</button></div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoría</button><button class="link" onclick="goHome()">salir</button></div>
   ${belt()}</div>`;
 }
 function renderMatchCardDisplay(m){
   if (m.status==='empty') return '';
-  const nameHtml = (f, isWinner) => f ? `<span class="fname ${isWinner?'win':''}">${escapeHtml(f.name)}</span>` : `<span class="fname dim">-</span>`;
   if (m.status==='waiting') return `<div class="matchcard"><div class="matchstatus">Por definir</div></div>`;
-  if (m.status==='bye') return `<div class="matchcard">${nameHtml(m.A,true)}<div class="matchvs">bye</div>${m.B?nameHtml(m.B,false):''}<div class="matchstatus">avanza directo</div></div>`;
-  if (m.status==='live') return `<div class="matchcard">${nameHtml(m.A,false)}<div class="matchvs">en vivo</div>${nameHtml(m.B,false)}</div>`;
-  if (m.status==='pending') return `<div class="matchcard">${nameHtml(m.A,false)}<div class="matchvs">vs</div>${nameHtml(m.B,false)}</div>`;
-  return `<div class="matchcard">${nameHtml(m.A,m.winnerSide==='A')}<div class="matchvs">vs</div>${nameHtml(m.B,m.winnerSide==='B')}</div>`;
+  if (m.status==='bye') return `<div class="matchcard">${matchupHtml(m.A, m.B, 'A', 'BYE')}<div class="matchstatus">avanza directo</div></div>`;
+  if (m.status==='live') return `<div class="matchcard">${matchupHtml(m.A, m.B, null, 'EN VIVO')}</div>`;
+  if (m.status==='pending') return `<div class="matchcard">${matchupHtml(m.A, m.B, null, 'VS')}</div>`;
+  return `<div class="matchcard">${matchupHtml(m.A, m.B, m.winnerSide, 'VS')}</div>`;
 }
 
-function renderCenterMsg(msg){ root.innerHTML = `<div class="col"><div class="center-msg">${msg}</div></div>`; }
+function renderCenterMsg(msg){
+  root.innerHTML = `<div class="col">
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><span></span><span></span></div>
+    <div class="center-msg"><div>${msg}<div style="margin-top:18px;"><button class="btn btn-dark" onclick="goHome()">Volver al inicio</button></div></div></div>
+  </div>`;
+}
 
 /* ------------------------------------ arranque ------------------------------------ */
 (async function init(){
