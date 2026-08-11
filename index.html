@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Torneo WAKO" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0a0a0a" />
+<title>Torneo WAKO — Pukem Kwan</title>
+<style>
+  :root{
+    --bg:#0a0a0a; --panel:#171717; --panel2:#262626; --line:#292929;
+    --muted:#a3a3a3; --muted2:#737373; --red:#dc2626; --red-l:#ef4444;
+    --blue:#2563eb; --blue-l:#3b82f6; --white:#ffffff; --green:#16a34a; --amber:#d97706;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation;}
+  html,body{height:100%; margin:0;}
+  body{background:var(--bg); color:var(--white); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; overflow:hidden;}
+  input,textarea,select{user-select:text;}
+  *:not(input):not(textarea){user-select:none;}
+  #root{height:100vh; height:100dvh; display:flex; flex-direction:column;}
+  button{font-family:inherit; border:none; cursor:pointer; color:inherit; background:none;}
+  select{font-family:inherit;}
+  .scroll{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .belt{display:flex; height:6px; width:100%; flex-shrink:0;}
+  .belt div{flex:1;}
+  .b-y{background:#eab308;} .b-g{background:#22c55e;} .b-b{background:#2563eb;}
+  .b-r{background:#dc2626;} .b-k{background:#171717;}
+  .col{display:flex; flex-direction:column; height:100%;}
+  .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 24px; gap:26px;}
+  .eyebrow{font-size:11px; letter-spacing:.3em; color:var(--muted); text-transform:uppercase; text-align:center;}
+  h1{font-size:28px; font-weight:900; letter-spacing:-0.02em; text-align:center; margin:6px 0 0;}
+  p.sub{color:var(--muted); font-size:13.5px; text-align:center; margin:4px 0 0;}
+  .stack{width:100%; max-width:340px; display:flex; flex-direction:column; gap:11px; margin:0 auto;}
+  .btn{width:100%; padding:14px; border-radius:16px; font-weight:800; font-size:15.5px; text-align:center; transition:transform .08s;}
+  .btn:active{transform:scale(.96);}
+  .btn-white{background:var(--white); color:#0a0a0a;}
+  .btn-dark{background:var(--panel2);}
+  .btn-green{background:var(--green); color:#fff;}
+  .btn-amber{background:var(--amber); color:#fff;}
+  .btn-sm{padding:9px 14px; border-radius:10px; font-size:12.5px; font-weight:700; background:var(--panel2);}
+  .btn-sm.on{background:#fff; color:#0a0a0a;}
+  .btn-sm.warn{background:#7f1d1d; color:#fecaca;}
+  .link{color:var(--muted); font-size:12.5px; background:none;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; padding-top:max(14px, env(safe-area-inset-top)); flex-shrink:0;}
+  .topbar h2{font-size:18px; font-weight:900; margin:0;}
+  .form{padding:20px 20px 90px;}
+  label{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; display:block;}
+  input.field,select.field{width:100%; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; color:#fff; font-size:15px; outline:none; margin-bottom:14px; -webkit-appearance:none; appearance:none;}
+  input.field:focus,select.field:focus{border-color:#737373;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:14px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;}
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-bottom:14px;}
+  .grid6{display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:14px;}
+  .opt{padding:11px 6px; border-radius:12px; font-weight:700; background:var(--panel2); text-align:center; font-size:12.5px;}
+  .opt.active{background:#fff; color:#0a0a0a;}
+  .hint{font-size:11px; color:var(--muted2); margin:-8px 0 14px;}
+
+  .catcard{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 16px; margin:0 16px 12px;}
+  .catcard .nm{font-weight:800; font-size:15.5px;}
+  .catcard .meta{color:var(--muted); font-size:12px; margin-top:3px;}
+  .badge{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:99px; background:var(--panel2); color:var(--muted); margin-right:5px; margin-bottom:4px;}
+  .badge.pf{color:var(--red-l);} .badge.lc{color:var(--blue-l);}
+  .badge.open{color:var(--amber);} .badge.closed{color:var(--green);}
+
+  .fighterrow{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .fighterrow .n{color:var(--muted); font-size:12px; width:20px;}
+  .fighterrow .info{flex:1; padding:0 8px;}
+  .fighterrow .info .club{color:var(--muted); font-size:11.5px;}
+
+  .roundblock{margin:0 16px 18px;}
+  .roundblock h3{font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 8px; padding-top:10px; border-top:1px solid var(--line);}
+  .matchcard{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:9px;}
+  .matchrow .fname{font-size:14.5px; font-weight:700;}
+  .matchrow .fname.win{color:var(--green);}
+  .matchrow .fname.dim{color:var(--muted2);}
+  .matchvs{text-align:center; color:var(--muted2); font-size:11px; padding:1px 0;}
+  .matchstatus{font-size:11px; color:var(--muted); margin-top:6px;}
+  .matchactions{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
+
+  .judgegrid{display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:320px;}
+  .judgebtn{aspect-ratio:1; border-radius:20px; background:var(--panel2); font-weight:900; font-size:30px; display:flex; align-items:center; justify-content:center;}
+  .judgebtn:active{transform:scale(.96);}
+
+  .jtop{padding:10px 16px 2px; display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted);}
+  .jscore{padding:0 16px 4px; display:flex; align-items:center; justify-content:center; gap:20px; font-size:24px; font-weight:900;}
+  .jmeta{display:flex; align-items:center; justify-content:center; gap:14px; font-size:11px; color:var(--muted); padding-bottom:4px;}
+  .jcall{text-align:center; font-size:11px; color:var(--muted); height:16px; padding-bottom:4px;}
+  .voteBtn{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:background .15s; min-height:0;}
+  .voteBtn .corner{font-size:11px; opacity:.75; letter-spacing:.1em; text-transform:uppercase;}
+  .voteBtn .name{font-size:26px; font-weight:900; letter-spacing:-0.01em; text-align:center; padding:0 12px;}
+  .voteBtn .hint2{font-size:12.5px; opacity:.8; margin-top:4px;}
+  .vred{background:var(--red);} .vred.flash{background:var(--red-l);}
+  .vblue{background:var(--blue);} .vblue.flash{background:var(--blue-l);}
+  .divider{height:1px; background:var(--line);}
+  .jbottom{padding:9px 16px; padding-bottom:max(9px, env(safe-area-inset-bottom)); display:flex; justify-content:space-between; align-items:center; background:var(--bg);}
+
+  .dtitle{text-align:center; padding-top:14px;}
+  .dtitle .name{font-size:17px; font-weight:900;}
+  .dtitle .meta{font-size:11.5px; color:var(--muted2); margin-top:2px;}
+  .roundpill{display:inline-block; margin-top:6px; font-size:11px; font-weight:700; color:var(--muted); background:var(--panel2); padding:3px 10px; border-radius:99px;}
+  .timer{text-align:center; padding:8px 0;}
+  .timer .t{font-size:40px; font-weight:900; font-variant-numeric:tabular-nums; font-family:'SF Mono',Menlo,monospace;}
+  .timerbtns{display:flex; justify-content:center; gap:7px; margin-top:6px; flex-wrap:wrap; padding:0 10px;}
+  .dscores{flex:1; display:grid; grid-template-columns:1fr 1fr; align-items:center; min-height:0;}
+  .dside{display:flex; flex-direction:column; align-items:center;}
+  .dside.left{border-right:1px solid var(--line);}
+  .dside .corner{font-size:10.5px; color:var(--muted2); letter-spacing:.15em; text-transform:uppercase;}
+  .dside .name{font-weight:800; font-size:15px; margin-top:2px; text-align:center; padding:0 8px;}
+  .dside.left .name{color:var(--red-l);}
+  .dside.right .name{color:var(--blue-l);}
+  .dside .score{font-weight:900; font-size:52px; line-height:1; margin-top:6px;}
+  .dside.left .score{color:var(--red-l);}
+  .dside.right .score{color:var(--blue-l);}
+  .warnrow{display:flex; align-items:center; gap:7px; margin-top:10px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; justify-content:center;}
+  .warndots{display:flex; gap:3px; margin-top:4px;}
+  .warndot{width:8px; height:8px; border-radius:50%; background:var(--line);}
+  .warndot.on{background:var(--amber);}
+  .dlog{padding:8px 20px; flex-shrink:0;}
+  .dlog .lbl{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted2); margin-bottom:5px;}
+  .dlog .items{max-height:60px; overflow-y:auto; font-size:12.5px; color:var(--muted); display:flex; flex-direction:column; gap:2px;}
+  .dbottom{padding:8px 20px 14px; padding-bottom:max(14px, env(safe-area-inset-bottom)); display:flex; justify-content:space-between; flex-shrink:0;}
+  .fclub{font-size:11px; color:var(--muted2); margin-top:1px; text-align:center;}
+  .pjrow{display:flex; justify-content:center; gap:14px; font-size:11px; color:var(--muted); margin-top:8px; flex-wrap:wrap;}
+  .pjrow b{color:var(--white);}
+  .center-msg{flex:1; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--muted); padding:0 30px;}
+  .emptylist{color:var(--muted2); font-size:13px; text-align:center; padding:30px 20px;}
+  .picklistitem{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:13px 16px; margin:0 16px 10px; display:flex; align-items:center; justify-content:space-between;}
+  .picklistitem .nm{font-weight:700; font-size:14.5px;}
+  .picklistitem .meta{color:var(--muted); font-size:11.5px; margin-top:2px;}
+  .livepill{font-size:10px; font-weight:800; color:#fff; background:var(--red); padding:2px 8px; border-radius:99px; letter-spacing:.05em; flex-shrink:0;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* ==========================================================================
+   Torneo WAKO — Academia Pukem Kwan (Castro)
+   Categorias oficiales WAKO (Chapter 2 - Tatami Rules): edad, sexo, peso.
+   Llaves hasta 16 luchadores. Marcador en vivo con asaltos, tiempo y
+   advertencias/faltas administradas por el Jefe de mesa (rol separado del
+   Juez, igual que en las reglas reales: el juez solo anota puntos, el
+   Central Referee/Jefe de mesa administra tiempo y sanciones).
+   Sin codigos: todo vive en un unico documento de torneo compartido.
+   ========================================================================== */
+
+const FIREBASE_URL = 'https://sistema-pukem-kwan-default-rtdb.firebaseio.com';
+const TORNEO_PATH = FIREBASE_URL + '/torneo.json';
+const CALL_WINDOW_MS = 3500;
+const POLL_MS = 1200;
+
+/* ------------------------- categorias oficiales WAKO ------------------------- */
+const WAKO_DIVISIONS = [
+  {key:'CH', label:'Children (7-9 anos)'},
+  {key:'YC', label:'Younger Cadets (10-12 anos)'},
+  {key:'OC', label:'Older Cadets (13-15 anos)'},
+  {key:'J',  label:'Juniors (16-18 anos)'},
+  {key:'S',  label:'Seniors (19-40 anos)'},
+  {key:'V',  label:'Masters / Veterans (41-55 anos)'},
+];
+const WAKO_WEIGHTS = {
+  CH: { M:['-18kg','-21kg','-24kg','-27kg','-30kg','-33kg','-36kg','+36kg'],
+        F:['-18kg','-21kg','-24kg','-27kg','-30kg','-33kg','-36kg','+36kg'] },
+  YC: { M:['-28kg','-32kg','-37kg','-42kg','-47kg','+47kg'],
+        F:['-28kg','-32kg','-37kg','-42kg','-47kg','+47kg'] },
+  OC: { M:['-32kg','-37kg','-42kg','-47kg','-52kg','-57kg','-63kg','-69kg','+69kg'],
+        F:['-32kg','-37kg','-42kg','-46kg','-50kg','-55kg','-60kg','-65kg','+65kg'] },
+  J:  { M:['-57kg','-63kg','-69kg','-74kg','-79kg','-84kg','-89kg','-94kg','+94kg'],
+        F:['-50kg','-55kg','-60kg','-65kg','-70kg','+70kg'] },
+  S:  { M:['-57kg','-63kg','-69kg','-74kg','-79kg','-84kg','-89kg','-94kg','+94kg'],
+        F:['-50kg','-55kg','-60kg','-65kg','-70kg','+70kg'] },
+  V:  { M:['-63kg','-74kg','-84kg','-94kg','+94kg'],
+        F:['-55kg','-65kg','+65kg'] },
+};
+const WAKO_DEFAULT_ROUNDS = { CH:{n:2,d:60}, YC:{n:2,d:90}, OC:{n:2,d:120}, J:{n:3,d:120}, S:{n:3,d:120}, V:{n:2,d:120} };
+function divisionLabel(key){ const d = WAKO_DIVISIONS.find(x=>x.key===key); return d ? d.label.replace(/\s*\(.*\)/,'') : key; }
+
+function uid(prefix){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
+function emptyTorneo(){ return { categories:{} }; }
+/* Firebase Realtime Database omite arreglos/objetos vacios y valores null al guardar,
+   y ademas convierte en arreglo (con huecos null) cualquier objeto cuyas claves sean
+   numeros (ej. {1:.., 2:..} para votos/jueces por id). Al leer, hay que deshacer ambas
+   cosas y volver al mismo shape que emptyCategory/newLive esperan, para que el resto
+   del codigo -que asume roster/log/pendingVotes/etc. siempre presentes como objeto o
+   arreglo "normal"- siga funcionando igual que con window.storage. */
+function objFromMaybeArray(v){
+  if (Array.isArray(v)){
+    const out = {};
+    v.forEach((item, i) => { if (item !== null && item !== undefined) out[String(i)] = item; });
+    return out;
+  }
+  return v || {};
+}
+function normalizeLive(live){
+  if (!live) return live;
+  const perJudgeDefault = {1:{red:0,blue:0},2:{red:0,blue:0},3:{red:0,blue:0},4:{red:0,blue:0}};
+  return {
+    ...live,
+    pendingVotes: objFromMaybeArray(live.pendingVotes),
+    perJudge: {...perJudgeDefault, ...objFromMaybeArray(live.perJudge)},
+    log: live.log || [],
+  };
+}
+function normalizeCategory(cat){
+  return {
+    ...cat,
+    roster: cat.roster || [],
+    slots: cat.slots || [],
+    results: cat.results || {},
+    log: cat.log || [],
+    live: cat.live ? normalizeLive(cat.live) : null,
+  };
+}
+function normalizeTorneo(data){
+  if (!data) return emptyTorneo();
+  const categories = {};
+  Object.keys(data.categories || {}).forEach(id => { categories[id] = normalizeCategory(data.categories[id]); });
+  return {...data, categories};
+}
+
+function emptyCategory(id, form){
+  return {
+    id,
+    nombre: form.nombre || autoName(form),
+    modalidad: form.modalidad || 'PF',
+    divisionEdad: form.divisionEdad || 'S',
+    sexo: form.sexo || 'M',
+    peso: form.peso || '',
+    cinturon: form.cinturon || 'color',
+    numJudges: form.numJudges || 3,
+    numRounds: form.numRounds || 2,
+    roundDuration: form.roundDuration || 90,
+    roster: [],
+    bracketClosed: false,
+    slots: [],
+    results: {},
+    live: null,
+    log: [],
+    createdAt: Date.now(),
+  };
+}
+function autoName(form){
+  const div = divisionLabel(form.divisionEdad) || 'Categoria';
+  const sexo = form.sexo === 'F' ? 'Femenino' : 'Masculino';
+  const cint = form.cinturon === 'negro' ? 'Cinturon Negro' : 'Cinturon Color';
+  const parts = [div, sexo, form.peso, cint].filter(Boolean);
+  return parts.join(' \u00b7 ') || 'Nueva categoria';
+}
+function pushCatLog(cat, text){
+  const log = [{ts:Date.now(), text}, ...(cat.log||[])].slice(0,40);
+  return {...cat, log};
+}
+
+/* ------------------------- logica de marcador en vivo ------------------------- */
+function pushLiveLog(live, text){
+  const log = [{ts:Date.now(), text}, ...(live.log||[])].slice(0,30);
+  return {...live, log};
+}
+function resolvePF(live){
+  const votes = live.pendingVotes || {};
+  const ids = Object.keys(votes);
+  if (ids.length === 0) return live;
+  const oldest = Math.min(...ids.map(id=>votes[id].ts));
+  const windowOpen = Date.now() - oldest < CALL_WINDOW_MS;
+  const allVoted = ids.length >= live.numJudges;
+  if (windowOpen && !allVoted) return live;
+  let red=0, blue=0;
+  ids.forEach(id => votes[id].color==='red' ? red++ : blue++);
+  let next = {...live, pendingVotes:{}};
+  if (red===blue && red>=1){
+    next = {...next, scoreRed: next.scoreRed+1, scoreBlue: next.scoreBlue+1};
+    next = pushLiveLog(next, `Punto compartido (${red}-${blue} jueces) - anotan ambos`);
+  } else if (red>blue && red>=2){
+    next = {...next, scoreRed: next.scoreRed+1};
+    next = pushLiveLog(next, `Punto Rojo (mayoria ${red}-${blue})`);
+  } else if (blue>red && blue>=2){
+    next = {...next, scoreBlue: next.scoreBlue+1};
+    next = pushLiveLog(next, `Punto Azul (mayoria ${blue}-${red})`);
+  } else {
+    next = pushLiveLog(next, `Llamada sin mayoria (${red}-${blue}) - sin punto`);
+  }
+  return next;
+}
+function applyVote(live, color, judgeId){
+  if (live.mode === 'PF'){
+    const pendingVotes = {...(live.pendingVotes||{}), [judgeId]:{color, ts:Date.now()}};
+    return resolvePF({...live, pendingVotes});
+  }
+  const pj = {...live.perJudge};
+  pj[judgeId] = {...pj[judgeId], [color]: (pj[judgeId] && pj[judgeId][color] || 0)+1};
+  const scoreRed = Object.values(pj).reduce((a,j)=>a+(j.red||0),0);
+  const scoreBlue = Object.values(pj).reduce((a,j)=>a+(j.blue||0),0);
+  return pushLiveLog({...live, perJudge:pj, scoreRed, scoreBlue}, `Juez ${judgeId}: +1 ${color==='red'?'Rojo':'Azul'}`);
+}
+function getRemainingMs(live){
+  if (!live) return 0;
+  if (live.timerRunning) return Math.max(0,(live.timerEndsAt||0)-Date.now());
+  return live.timerRemainingMs || 0;
+}
+function fmtTime(ms){
+  const total = Math.ceil(ms/1000);
+  const m = Math.floor(total/60), s = total%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+function newLive(cat, matchId, fighterA, fighterB){
+  return {
+    matchId, fighterA, fighterB, mode: cat.modalidad, numJudges: cat.numJudges,
+    round:1, roundsTotal: cat.numRounds || 2,
+    scoreRed:0, scoreBlue:0, warningsRed:0, warningsBlue:0,
+    perJudge:{1:{red:0,blue:0},2:{red:0,blue:0},3:{red:0,blue:0},4:{red:0,blue:0}},
+    pendingVotes:{}, log:[],
+    roundDuration: cat.roundDuration || 90, timerRunning:false, timerEndsAt:null,
+    timerRemainingMs: (cat.roundDuration||90)*1000,
+  };
+}
+
+/* ------------------------------ llave / bracket ------------------------------ */
+function isResolved(m){ return m.status==='done' || m.status==='bye' || m.status==='empty'; }
+function leafMatch(cat, id, fA, fB){
+  if (!cat.bracketClosed) return {id, A:fA||null, B:fB||null, status:'empty', winner:null, loser:null};
+  if (fA && fB){
+    const r = (cat.results||{})[id];
+    if (r){
+      const winner = r.winner==='A'?fA:fB, loser = r.winner==='A'?fB:fA;
+      return {id, A:fA, B:fB, status:'done', winner, loser, winnerSide:r.winner, scoreA:r.scoreA, scoreB:r.scoreB, manual:r.manual, disq:r.disq};
+    }
+    if (cat.live && cat.live.matchId===id) return {id, A:fA, B:fB, status:'live', winner:null, loser:null};
+    return {id, A:fA, B:fB, status:'pending', winner:null, loser:null};
+  }
+  if (fA && !fB) return {id, A:fA, B:null, status:'bye', winner:fA, loser:null};
+  if (!fA && fB) return {id, A:null, B:fB, status:'bye', winner:fB, loser:null};
+  return {id, A:null, B:null, status:'empty', winner:null, loser:null};
+}
+function nextRoundMatch(cat, id, m1, m2){
+  if (!isResolved(m1) || !isResolved(m2)) return {id, A:null, B:null, status:'waiting', winner:null, loser:null};
+  return leafMatch(cat, id, m1.winner, m2.winner);
+}
+function buildBracket(cat){
+  const slots = cat.slots && cat.slots.length ? cat.slots : new Array(16).fill(null);
+  const r16 = []; for (let k=0;k<8;k++) r16.push(leafMatch(cat, `R16-${k+1}`, slots[2*k]||null, slots[2*k+1]||null));
+  const qf = [];  for (let k=0;k<4;k++) qf.push(nextRoundMatch(cat, `QF-${k+1}`, r16[2*k], r16[2*k+1]));
+  const sf = [];  for (let k=0;k<2;k++) sf.push(nextRoundMatch(cat, `SF-${k+1}`, qf[2*k], qf[2*k+1]));
+  const final = nextRoundMatch(cat, 'F-1', sf[0], sf[1]);
+  const bothSemisDone = sf[0].status==='done' && sf[1].status==='done';
+  const third = bothSemisDone ? leafMatch(cat, 'TP-1', sf[0].loser, sf[1].loser) : {id:'TP-1', A:null, B:null, status:'waiting', winner:null, loser:null};
+  return [
+    {name:'Octavos', matches:r16},
+    {name:'Cuartos', matches:qf},
+    {name:'Semis', matches:sf},
+    {name:'3\u00b0 y 4\u00b0 puesto', matches:[third]},
+    {name:'Final', matches:[final]},
+  ];
+}
+function findMatch(cat, matchId){
+  const rounds = buildBracket(cat);
+  for (const r of rounds) for (const m of r.matches) if (m.id===matchId) return m;
+  return null;
+}
+
+/* --------------------------------- estado -------------------------------- */
+const state = { view:'home', torneo:null, loading:true, catId:null, judgeId:null, flash:'' };
+const dR = WAKO_DEFAULT_ROUNDS.YC;
+const newCatForm = { nombre:'', modalidad:'PF', divisionEdad:'', sexo:'M', peso:'', cinturon:'color', numJudges:3, numRounds:dR.n, roundDuration:dR.d };
+const fighterForm = { name:'', club:'' };
+let pollTimer=null, tickTimer=null, resolveTimer=null;
+const root = document.getElementById('root');
+
+function saveSession(next){ try{ localStorage.setItem('wako_session', JSON.stringify(next)); }catch(e){} }
+function restoreSession(){
+  try{
+    const s = localStorage.getItem('wako_session');
+    if (s){
+      const p = JSON.parse(s);
+      if (p.view) state.view = p.view;
+      if (p.catId) state.catId = p.catId;
+      if (p.judgeId) state.judgeId = p.judgeId;
+    }
+  }catch(e){}
+  state.loading = false;
+}
+async function loadTorneo(){
+  try{
+    const res = await fetch(TORNEO_PATH);
+    const data = await res.json();
+    state.torneo = normalizeTorneo(data);
+  }catch(e){ if (!state.torneo) state.torneo = emptyTorneo(); }
+  render();
+}
+async function writeTorneo(next){
+  state.torneo = next;
+  render();
+  try{ await fetch(TORNEO_PATH, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(next)}); }catch(e){}
+}
+function currentCat(){ return state.torneo && state.catId ? state.torneo.categories[state.catId] : null; }
+function vibrate(ms){ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} }
+
+function clearTimers(){
+  if (pollTimer) clearInterval(pollTimer);
+  if (tickTimer) clearInterval(tickTimer);
+  if (resolveTimer) clearInterval(resolveTimer);
+  pollTimer = tickTimer = resolveTimer = null;
+}
+function setupTimersForView(){
+  clearTimers();
+  if (state.view !== 'home' && state.view !== 'mesa_newCategory'){
+    loadTorneo();
+    pollTimer = setInterval(loadTorneo, POLL_MS);
+  }
+  if (['judge_vote','display_view','jefe_control'].includes(state.view)){
+    tickTimer = setInterval(render, 300);
+    resolveTimer = setInterval(async ()=>{
+      try{
+        const res = await fetch(TORNEO_PATH);
+        const data = await res.json();
+        if (!data) return;
+        const t = normalizeTorneo(data);
+        const cat = t.categories[state.catId];
+        if (cat && cat.live && cat.live.mode==='PF' && Object.keys(cat.live.pendingVotes||{}).length>0){
+          const resolvedLive = resolvePF(cat.live);
+          if (resolvedLive !== cat.live){
+            const next = {...t, categories:{...t.categories, [cat.id]:{...cat, live:resolvedLive}}};
+            await writeTorneo(next);
+          }
+        }
+      }catch(e){}
+    }, 500);
+  }
+}
+function goTo(view, extra){
+  state.view = view;
+  if (extra) Object.assign(state, extra);
+  saveSession({view:state.view, catId:state.catId, judgeId:state.judgeId});
+  setupTimersForView();
+  render();
+}
+function goHome(){ state.catId=null; state.judgeId=null; goTo('home'); }
+
+/* ------------------------------- acciones mesa ------------------------------- */
+function createCategory(){
+  const id = uid('cat');
+  const cat = emptyCategory(id, newCatForm);
+  const next = {...state.torneo, categories:{...state.torneo.categories, [id]:cat}};
+  Object.assign(newCatForm, { nombre:'', divisionEdad:'', sexo:'M', peso:'', cinturon:'color', modalidad:'PF', numJudges:3, numRounds:dR.n, roundDuration:dR.d });
+  writeTorneo(next);
+  goTo('mesa_category', {catId:id});
+}
+function deleteCategory(catId){
+  if (!confirm('\u00bfEliminar esta categoria y toda su llave? Esta accion no se puede deshacer.')) return;
+  const cats = {...state.torneo.categories};
+  delete cats[catId];
+  writeTorneo({...state.torneo, categories:cats});
+  goTo('mesa_home');
+}
+function addFighter(catId){
+  const cat = state.torneo.categories[catId];
+  if (!cat || cat.roster.length>=16) return;
+  const name = (fighterForm.name||'').trim();
+  if (!name) return;
+  const fighter = {name, club:(fighterForm.club||'').trim()};
+  let next = {...cat, roster:[...cat.roster, fighter]};
+  next = pushCatLog(next, `Inscrito: ${name}`);
+  fighterForm.name=''; fighterForm.club='';
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]:next}});
+}
+function removeFighter(catId, idx){
+  const cat = state.torneo.categories[catId];
+  const removedName = cat.roster[idx] ? cat.roster[idx].name : '';
+  const roster = cat.roster.filter((_,i)=>i!==idx);
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: pushCatLog({...cat, roster}, `Se quito a ${removedName} de inscritos`)}});
+}
+function shuffleRoster(catId){
+  const cat = state.torneo.categories[catId];
+  const arr = [...cat.roster];
+  for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp; }
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: {...cat, roster:arr}}});
+}
+function closeBracket(catId){
+  const cat = state.torneo.categories[catId];
+  if (cat.roster.length < 2) return;
+  const slots = new Array(16).fill(null);
+  cat.roster.forEach((f,i)=>{ slots[i]=f; });
+  let next = {...cat, slots, bracketClosed:true};
+  next = pushCatLog(next, `Llave generada con ${cat.roster.length} luchador(es)`);
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: next}});
+}
+function reopenBracket(catId){
+  const cat = state.torneo.categories[catId];
+  if (Object.keys(cat.results||{}).length>0){ alert('No se puede reabrir: ya hay resultados registrados en esta llave.'); return; }
+  const roster = (cat.slots||[]).filter(Boolean);
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: {...cat, roster, slots:[], bracketClosed:false}}});
+}
+function declareWinner(catId, matchId, side){
+  const cat = state.torneo.categories[catId];
+  const m = findMatch(cat, matchId);
+  if (!m || !m.A || !m.B) return;
+  const winnerName = side==='A' ? m.A.name : m.B.name;
+  let next = {...cat, results:{...cat.results, [matchId]:{winner:side, scoreA:null, scoreB:null, manual:true}}};
+  next = pushCatLog(next, `${matchId}: ${winnerName} avanza (decision manual)`);
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: next}});
+}
+function startLive(catId, matchId){
+  const cat = state.torneo.categories[catId];
+  const m = findMatch(cat, matchId);
+  if (!m || !m.A || !m.B) return;
+  const live = newLive(cat, matchId, m.A, m.B);
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: {...cat, live}}});
+}
+function finalizeLive(catId, forcedWinner, reason){
+  const cat = state.torneo.categories[catId];
+  const live = cat.live;
+  if (!live) return;
+  let winnerSide = forcedWinner;
+  if (!winnerSide){
+    if (live.scoreRed === live.scoreBlue) return;
+    winnerSide = live.scoreRed > live.scoreBlue ? 'A' : 'B';
+  }
+  const winnerName = winnerSide==='A' ? live.fighterA.name : live.fighterB.name;
+  let next = {...cat, live:null, results:{...cat.results, [live.matchId]:{winner:winnerSide, scoreA:live.scoreRed, scoreB:live.scoreBlue, manual:!!reason, disq:reason==='DISQ'}}};
+  next = pushCatLog(next, reason==='DISQ' ? `${live.matchId}: ${winnerName} gana por descalificacion` : `${live.matchId}: ${winnerName} gana ${live.scoreRed}-${live.scoreBlue}`);
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [catId]: next}});
+}
+
+/* ------------------------------- acciones juez ------------------------------- */
+function joinAsJudge(id){
+  saveSession({view:'judge_vote', catId:state.catId, judgeId:id});
+  goTo('judge_vote', {judgeId:id});
+}
+function vote(color){
+  vibrate(30);
+  state.flash = color;
+  setTimeout(()=>{ state.flash=''; render(); }, 300);
+  const cat = currentCat();
+  if (!cat || !cat.live) return;
+  const optimisticLive = applyVote(cat.live, color, state.judgeId);
+  state.torneo = {...state.torneo, categories:{...state.torneo.categories, [cat.id]: {...cat, live:optimisticLive}}};
+  render();
+  (async ()=>{
+    try{
+      const res = await fetch(TORNEO_PATH);
+      const data = await res.json();
+      const t = data ? normalizeTorneo(data) : state.torneo;
+      const c = t.categories[cat.id];
+      if (!c || !c.live) return;
+      const next = applyVote(c.live, color, state.judgeId);
+      const finalT = {...t, categories:{...t.categories, [cat.id]: {...c, live:next}}};
+      await fetch(TORNEO_PATH, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(finalT)});
+      state.torneo = finalT; render();
+    }catch(e){}
+  })();
+}
+
+/* ------------------------------- acciones jefe de mesa ------------------------------- */
+function jefeUpdate(mutator){
+  const cat = currentCat(); if (!cat || !cat.live) return;
+  const live = mutator({...cat.live});
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [cat.id]:{...cat, live}}});
+}
+function startTimer(){ jefeUpdate(live=>{ if (live.timerRunning) return live; const remaining=getRemainingMs(live); return {...live, timerRunning:true, timerEndsAt:Date.now()+remaining}; }); }
+function pauseTimer(){ jefeUpdate(live=>{ if (!live.timerRunning) return live; const remaining=getRemainingMs(live); return {...live, timerRunning:false, timerRemainingMs:remaining}; }); }
+function resetTimer(){ jefeUpdate(live=>({...live, timerRunning:false, timerRemainingMs:live.roundDuration*1000, timerEndsAt:null})); }
+function adjustTime(deltaSec){
+  jefeUpdate(live=>{
+    if (live.timerRunning){
+      const newEnds = (live.timerEndsAt||Date.now()) + deltaSec*1000;
+      return {...live, timerEndsAt: Math.max(Date.now(), newEnds)};
+    }
+    const newRemaining = Math.max(0, (live.timerRemainingMs||0) + deltaSec*1000);
+    return {...live, timerRemainingMs:newRemaining};
+  });
+}
+function nextRound(){
+  jefeUpdate(live=>{
+    if (live.round >= live.roundsTotal) return live;
+    let next = {...live, round: live.round+1, timerRunning:false, timerEndsAt:null, timerRemainingMs: live.roundDuration*1000};
+    next = pushLiveLog(next, `Fin del asalto ${live.round} - inicia asalto ${live.round+1} (marcador se mantiene)`);
+    return next;
+  });
+}
+function addFoul(color){
+  const cat = currentCat(); if (!cat || !cat.live) return;
+  const field = color==='red' ? 'warningsRed' : 'warningsBlue';
+  const scoreField = color==='red' ? 'scoreRed' : 'scoreBlue';
+  const label = color==='red' ? cat.live.fighterA.name : cat.live.fighterB.name;
+  let live = {...cat.live};
+  const count = (live[field]||0) + 1;
+  live[field] = count;
+  if (count === 2 || count === 3){
+    live[scoreField] = Math.max(0, live[scoreField] - 1);
+    live = pushLiveLog(live, `Advertencia ${count}/4 a ${label} - menos 1 punto`);
+  } else if (count >= 4){
+    live = pushLiveLog(live, `4ta advertencia a ${label} - descalificacion`);
+  } else {
+    live = pushLiveLog(live, `Advertencia ${count}/4 a ${label}`);
+  }
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [cat.id]:{...cat, live}}});
+  if (count >= 4){
+    const winnerSide = color==='red' ? 'B' : 'A';
+    finalizeLive(cat.id, winnerSide, 'DISQ');
+  }
+}
+function undoFoul(color){
+  const cat = currentCat(); if (!cat || !cat.live) return;
+  const field = color==='red' ? 'warningsRed' : 'warningsBlue';
+  const scoreField = color==='red' ? 'scoreRed' : 'scoreBlue';
+  let live = {...cat.live};
+  const prev = live[field]||0;
+  if (prev<=0) return;
+  live[field] = prev-1;
+  if (prev===2 || prev===3) live[scoreField] = (live[scoreField]||0) + 1;
+  writeTorneo({...state.torneo, categories:{...state.torneo.categories, [cat.id]:{...cat, live}}});
+}
+function resetLiveScores(){
+  jefeUpdate(live=>pushLiveLog({...live, scoreRed:0, scoreBlue:0, warningsRed:0, warningsBlue:0,
+    perJudge:{1:{red:0,blue:0},2:{red:0,blue:0},3:{red:0,blue:0},4:{red:0,blue:0}}, pendingVotes:{}}, '- Marcador reiniciado -'));
+}
+
+/* --------------------------------- utilidades UI --------------------------------- */
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function catBadges(cat){
+  return `<span class="badge ${cat.modalidad==='PF'?'pf':'lc'}">${cat.modalidad==='PF'?'Point Fighting':'Light Contact'}</span>`+
+    `<span class="badge">${escapeHtml(divisionLabel(cat.divisionEdad))}</span>`+
+    `<span class="badge">${cat.sexo==='F'?'Femenino':'Masculino'}</span>`+
+    (cat.peso?`<span class="badge">${escapeHtml(cat.peso)}</span>`:'')+
+    `<span class="badge">${cat.cinturon==='negro'?'Cinturon Negro':'Cinturon Color'}</span>`+
+    `<span class="badge">${cat.numRounds}x${fmtTime(cat.roundDuration*1000)}</span>`+
+    `<span class="badge ${cat.bracketClosed?'closed':'open'}">${cat.bracketClosed?'Llave cerrada':'Inscripciones abiertas'}</span>`;
+}
+function warnDots(n){ let h=''; for(let i=1;i<=4;i++) h+=`<span class="warndot ${i<=n?'on':''}"></span>`; return h; }
+function perJudgeBreakdown(live){
+  if (live.mode !== 'LC') return '';
+  const n = live.numJudges || 3;
+  const items = [];
+  for (let i=1;i<=n;i++){
+    const j = (live.perJudge && live.perJudge[i]) || {red:0,blue:0};
+    items.push(`<span>J${i} <b>${j.red}-${j.blue}</b></span>`);
+  }
+  return `<div class="pjrow">${items.join('')}</div>`;
+}
+
+/* ------------------------------------ render ------------------------------------ */
+function belt(){ return `<div class="belt"><div class="b-y"></div><div class="b-g"></div><div class="b-b"></div><div class="b-r"></div><div class="b-k"></div></div>`; }
+function render(){
+  if (state.loading){ root.innerHTML=''; return; }
+  const fns = {
+    home:renderHome, mesa_home:renderMesaHome, mesa_newCategory:renderNewCategory, mesa_category:renderMesaCategory,
+    judge_selectCategory:renderJudgeSelectCategory, judge_selectSlot:renderJudgeSelectSlot, judge_vote:renderJudgeVote,
+    jefe_selectCategory:renderJefeSelectCategory, jefe_control:renderJefeControl,
+    display_selectCategory:renderDisplaySelectCategory, display_view:renderDisplayView,
+  };
+  (fns[state.view]||renderHome)();
+}
+
+function renderHome(){
+  root.innerHTML = `
+  <div class="col">${belt()}
+    <div class="center">
+      <div>
+        <div class="eyebrow">Academia Pukem Kwan &middot; Castro</div>
+        <h1>TORNEO WAKO</h1>
+        <p class="sub">Llaves &middot; Point Fighting &middot; Light Contact</p>
+      </div>
+      <div class="stack">
+        <button class="btn btn-white" onclick="goTo('mesa_home')">Mesa (categorias y llaves)</button>
+        <button class="btn btn-amber" onclick="goTo('jefe_selectCategory')">Jefe de mesa (control en vivo)</button>
+        <button class="btn btn-dark" onclick="goTo('judge_selectCategory')">Unirme como juez</button>
+        <button class="btn btn-dark" onclick="goTo('display_selectCategory')">Pantalla publica</button>
+      </div>
+    </div>
+  ${belt()}</div>`;
+}
+
+function renderMesaHome(){
+  const cats = Object.values((state.torneo && state.torneo.categories)||{}).sort((a,b)=>a.createdAt-b.createdAt);
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Categorias</h2><button class="btn-sm on" onclick="goTo('mesa_newCategory')">+ Nueva</button></div>
+    <div class="scroll">
+      ${cats.length===0 ? `<div class="emptylist">Aun no hay categorias.<br>Crea la primera con "+ Nueva".</div>` :
+        cats.map(cat=>`
+          <div class="catcard" onclick="goTo('mesa_category',{catId:'${cat.id}'})">
+            <div class="nm">${escapeHtml(cat.nombre)} ${cat.live?'<span class="livepill">EN VIVO</span>':''}</div>
+            <div class="meta">${catBadges(cat)}</div>
+            <div class="meta" style="margin-top:6px;">Inscritos: ${cat.bracketClosed ? (cat.slots||[]).filter(Boolean).length + '/16 (llave cerrada)' : cat.roster.length + '/16'}</div>
+          </div>`).join('')}
+      <div style="height:20px;"></div>
+    </div>
+  </div>`;
+}
+
+function renderNewCategory(){
+  const f = newCatForm;
+  const pesoOptions = f.divisionEdad ? (WAKO_WEIGHTS[f.divisionEdad] && WAKO_WEIGHTS[f.divisionEdad][f.sexo] || []) : [];
+  root.innerHTML = `
+  <div class="col">
+    <div class="scroll form">
+      <button class="link" onclick="goTo('mesa_home')" style="margin-bottom:14px;">&larr; volver</button>
+      <h2 style="font-size:21px; font-weight:900; margin:0 0 4px;">Nueva categoria</h2>
+      <div class="hint" style="margin-top:2px;">Divisiones y pesos segun reglamento oficial WAKO (Tatami Rules, Cap. 2)</div>
+
+      <label>Modalidad</label>
+      <div class="grid2">
+        <button class="opt ${f.modalidad==='PF'?'active':''}" onclick="newCatForm.modalidad='PF'; render()">Point Fighting</button>
+        <button class="opt ${f.modalidad==='LC'?'active':''}" onclick="newCatForm.modalidad='LC'; render()">Light Contact</button>
+      </div>
+
+      <label>Sexo</label>
+      <div class="grid2">
+        <button class="opt ${f.sexo==='M'?'active':''}" onclick="newCatForm.sexo='M'; newCatForm.peso=''; render()">Masculino</button>
+        <button class="opt ${f.sexo==='F'?'active':''}" onclick="newCatForm.sexo='F'; newCatForm.peso=''; render()">Femenino</button>
+      </div>
+
+      <label>Division de edad (WAKO)</label>
+      <select class="field" onchange="onDivisionChange(this.value)">
+        <option value="">Selecciona division...</option>
+        ${WAKO_DIVISIONS.map(d=>`<option value="${d.key}" ${f.divisionEdad===d.key?'selected':''}>${d.label}</option>`).join('')}
+      </select>
+
+      <label>Categoria de peso ${f.divisionEdad?'':'(elige division primero)'}</label>
+      <select class="field" onchange="newCatForm.peso=this.value" ${!f.divisionEdad?'disabled':''}>
+        <option value="">Selecciona peso...</option>
+        ${pesoOptions.map(p=>`<option value="${p}" ${f.peso===p?'selected':''}>${p}</option>`).join('')}
+      </select>
+
+      <label>Cinturon (criterio del club, no es division oficial WAKO)</label>
+      <div class="grid2">
+        <button class="opt ${f.cinturon==='color'?'active':''}" onclick="newCatForm.cinturon='color'; render()">Color</button>
+        <button class="opt ${f.cinturon==='negro'?'active':''}" onclick="newCatForm.cinturon='negro'; render()">Negro</button>
+      </div>
+
+      <label>Nombre de categoria (se autogenera, editable)</label>
+      <input class="field" value="${escapeHtml(f.nombre)}" oninput="newCatForm.nombre=this.value" placeholder="${escapeHtml(autoName(f))}" />
+
+      <label>Cantidad de jueces</label>
+      <div class="grid2">
+        <button class="opt ${f.numJudges===3?'active':''}" onclick="newCatForm.numJudges=3; render()">3 jueces (oficial)</button>
+        <button class="opt ${f.numJudges===4?'active':''}" onclick="newCatForm.numJudges=4; render()">4 jueces</button>
+      </div>
+
+      <label>Cantidad de asaltos</label>
+      <div class="grid2">
+        <button class="opt ${f.numRounds===2?'active':''}" onclick="newCatForm.numRounds=2; render()">2 asaltos</button>
+        <button class="opt ${f.numRounds===3?'active':''}" onclick="newCatForm.numRounds=3; render()">3 asaltos</button>
+      </div>
+
+      <label>Duracion de cada asalto</label>
+      <div class="grid4">
+        ${[60,90,120,180].map(s=>`<button class="opt ${f.roundDuration===s?'active':''}" style="font-size:12px; padding:9px;" onclick="newCatForm.roundDuration=${s}; render()">${fmtTime(s*1000)}</button>`).join('')}
+      </div>
+      <div class="hint">Por defecto 1:30 (formato Younger Cadets / open tournament). Ajustable libremente por el jefe de mesa durante el combate.</div>
+
+      <button class="btn btn-white" onclick="createCategory()">Crear categoria</button>
+      <div style="height:30px;"></div>
+    </div>
+  </div>`;
+}
+function onDivisionChange(key){
+  newCatForm.divisionEdad = key;
+  newCatForm.peso = '';
+  if (key && WAKO_DEFAULT_ROUNDS[key]){
+    newCatForm.numRounds = WAKO_DEFAULT_ROUNDS[key].n;
+    newCatForm.roundDuration = WAKO_DEFAULT_ROUNDS[key].d;
+  }
+  render();
+}
+
+function renderMesaCategory(){
+  const cat = currentCat();
+  if (!cat) return renderCenterMsg('Categoria no encontrada.');
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goTo('mesa_home')">&larr; categorias</button>
+      <div style="text-align:right;"><button class="link" onclick="deleteCategory('${cat.id}')" style="color:#f87171;">eliminar</button></div>
+    </div>
+    <div style="padding:0 16px 10px;">
+      <div style="font-weight:900; font-size:18px;">${escapeHtml(cat.nombre)}</div>
+      <div style="margin-top:6px;">${catBadges(cat)}</div>
+    </div>
+    <div class="scroll">
+      ${!cat.bracketClosed ? renderRosterSection(cat) : renderBracketSection(cat)}
+      <div style="height:30px;"></div>
+    </div>
+  </div>`;
+}
+
+function renderRosterSection(cat){
+  return `
+    <div style="padding:6px 16px;">
+      <label>Luchadores inscritos (${cat.roster.length}/16)</label>
+      ${cat.roster.length===0 ? `<div class="emptylist" style="padding:16px 0;">Nadie inscrito todavia.</div>` :
+        cat.roster.map((f,i)=>`
+          <div class="fighterrow"><span class="n">${i+1}</span>
+            <div class="info"><div>${escapeHtml(f.name)}</div>${f.club?`<div class="club">${escapeHtml(f.club)}</div>`:''}</div>
+            <button class="link" onclick="removeFighter('${cat.id}', ${i})">quitar</button>
+          </div>`).join('')}
+    </div>
+    ${cat.roster.length<16 ? `
+    <div style="padding:16px;">
+      <label>Agregar luchador</label>
+      <input class="field" placeholder="Nombre" value="${escapeHtml(fighterForm.name)}" oninput="fighterForm.name=this.value" />
+      <input class="field" placeholder="Club / academia (opcional)" value="${escapeHtml(fighterForm.club)}" oninput="fighterForm.club=this.value" />
+      <button class="btn btn-dark" onclick="addFighter('${cat.id}')">+ Agregar a la llave</button>
+    </div>` : ''}
+    <div style="padding:6px 16px 0; display:flex; gap:8px;">
+      <button class="btn-sm" onclick="shuffleRoster('${cat.id}')" ${cat.roster.length<2?'disabled style="opacity:.4;"':''}>mezclar orden</button>
+    </div>
+    <div style="padding:14px 16px 0;">
+      <button class="btn btn-green" onclick="closeBracket('${cat.id}')" ${cat.roster.length<2?'disabled style="opacity:.4;"':''}>Cerrar inscripciones y generar llave</button>
+      ${cat.roster.length<2 ? `<div class="matchstatus" style="text-align:center; margin-top:6px;">Minimo 2 luchadores para generar la llave.</div>` : ''}
+    </div>`;
+}
+
+function renderMatchCard(cat, m){
+  if (m.status==='empty') return '';
+  const nameHtml = (f, isWinner) => f ? `<span class="fname ${isWinner?'win':''}">${escapeHtml(f.name)}</span>` : `<span class="fname dim">-</span>`;
+  let body = '';
+  if (m.status==='bye'){
+    body = `${nameHtml(m.A, true)}<div class="matchvs">bye</div>${m.B?nameHtml(m.B,false):''}
+      <div class="matchstatus">${escapeHtml((m.winner||{}).name||'')} avanza automaticamente</div>`;
+  } else if (m.status==='waiting'){
+    body = `<div class="matchstatus">Esperando resultado de la ronda anterior</div>`;
+  } else if (m.status==='pending'){
+    body = `${nameHtml(m.A,false)}<div class="matchvs">vs</div>${nameHtml(m.B,false)}
+      <div class="matchactions">
+        <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','A')">gana ${escapeHtml(m.A.name)}</button>
+        <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','B')">gana ${escapeHtml(m.B.name)}</button>
+        <button class="btn-sm on" onclick="startLive('${cat.id}','${m.id}')">anotar en vivo</button>
+      </div>`;
+  } else if (m.status==='live'){
+    const live = cat.live;
+    body = `${nameHtml(m.A,false)}<div class="matchvs">vs</div>${nameHtml(m.B,false)}
+      <div class="matchstatus">en vivo - asalto ${live?live.round:1}/${live?live.roundsTotal:1} - marcador ${live?live.scoreRed:0}-${live?live.scoreBlue:0}</div>
+      <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">ir a control de mesa</button></div>`;
+  } else if (m.status==='done'){
+    body = `${nameHtml(m.A, m.winnerSide==='A')}<div class="matchvs">vs</div>${nameHtml(m.B, m.winnerSide==='B')}
+      <div class="matchstatus">${escapeHtml(m.winner.name)} gana${m.disq?' (descalificacion)':m.manual?' (decision manual)':` ${m.scoreA}-${m.scoreB}`}</div>`;
+  }
+  return `<div class="matchcard">${body}</div>`;
+}
+function renderBracketSection(cat){
+  const rounds = buildBracket(cat);
+  return `
+    <div>
+      <div style="padding:0 16px; margin-top:6px;">
+        <button class="link" onclick="reopenBracket('${cat.id}')">reabrir inscripciones</button>
+      </div>
+      ${rounds.map(r=>`
+        <div class="roundblock">
+          <h3>${r.name}</h3>
+          ${r.matches.map(m=>renderMatchCard(cat,m)).join('') || '<div class="matchstatus">-</div>'}
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderJudgeSelectCategory(){
+  const cats = Object.values((state.torneo && state.torneo.categories)||{}).filter(c=>c.live);
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Combates en vivo</h2><span></span></div>
+    <div class="scroll">
+      ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo por el momento.<br>Pidele a mesa que inicie uno.</div>` :
+        cats.map(c=>`
+          <div class="picklistitem" onclick="goTo('judge_selectSlot',{catId:'${c.id}'})">
+            <div><div class="nm">${escapeHtml(c.live.fighterA.name)} vs ${escapeHtml(c.live.fighterB.name)}</div>
+            <div class="meta">${escapeHtml(c.nombre)} &middot; asalto ${c.live.round}/${c.live.roundsTotal}</div></div>
+            <span class="livepill">EN VIVO</span>
+          </div>`).join('')}
+      <div style="height:20px;"></div>
+    </div>
+  </div>`;
+}
+function renderJudgeSelectSlot(){
+  const cat = currentCat();
+  if (!cat || !cat.live) return renderCenterMsg('Este combate ya no esta en vivo.');
+  const n = cat.numJudges || 3;
+  root.innerHTML = `
+  <div class="col" style="align-items:center; justify-content:center; padding:0 24px; gap:22px;">
+    <div style="text-align:center;">
+      <div class="eyebrow">${escapeHtml(cat.live.fighterA.name)} vs ${escapeHtml(cat.live.fighterB.name)}</div>
+      <h2 style="margin-top:6px;">Que juez eres?</h2>
+    </div>
+    <div class="judgegrid">${[1,2,3,4].slice(0,n).map(k=>`<button class="judgebtn" onclick="joinAsJudge(${k})">${k}</button>`).join('')}</div>
+    <button class="link" onclick="goTo('judge_selectCategory')">&larr; volver</button>
+  </div>`;
+}
+function renderJudgeVote(){
+  const cat = currentCat();
+  if (!cat || !cat.live) return renderCenterMsg('Este combate ya finalizo o no esta disponible.');
+  const live = cat.live;
+  const modeLabel = live.mode==='PF' ? 'Point Fighting' : 'Light Contact';
+  const pendingCount = Object.keys(live.pendingVotes||{}).length;
+  const remaining = getRemainingMs(live);
+  root.innerHTML = `
+  <div class="col">
+    <div class="jtop"><span>Juez ${state.judgeId} &middot; asalto ${live.round}/${live.roundsTotal}</span><span style="text-transform:uppercase;">${modeLabel}</span></div>
+    <div class="jscore"><span style="color:var(--red-l)">${live.scoreRed}</span><span style="color:var(--muted2); font-size:14px; font-weight:400;">vs</span><span style="color:var(--blue-l)">${live.scoreBlue}</span></div>
+    <div class="jmeta">
+      <span style="font-family:monospace;">${fmtTime(remaining)}</span>
+      ${(live.warningsRed>0||live.warningsBlue>0) ? `<span>Advertencias &middot; <span style="color:var(--red-l)">${live.warningsRed}</span> / <span style="color:var(--blue-l)">${live.warningsBlue}</span></span>` : ''}
+    </div>
+    ${live.mode==='PF' ? `<div class="jcall">${pendingCount>0?`Llamada abierta - ${pendingCount} voto(s)`:'Esperando tecnica'}</div>` : `<div class="jcall"></div>`}
+
+    <button class="voteBtn vred ${state.flash==='red'?'flash':''}" onclick="vote('red')">
+      <span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="hint2" style="margin-top:0;">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="hint2">toca para anotar</span>
+    </button>
+    <div class="divider"></div>
+    <button class="voteBtn vblue ${state.flash==='blue'?'flash':''}" onclick="vote('blue')">
+      <span class="corner">Azul</span><span class="name">${escapeHtml(live.fighterB.name)}</span>${live.fighterB.club?`<span class="hint2" style="margin-top:0;">${escapeHtml(live.fighterB.club)}</span>`:''}<span class="hint2">toca para anotar</span>
+    </button>
+
+    <div class="jbottom"><button class="link" onclick="goHome()">salir</button><button class="link" onclick="goTo('display_view')">ver pantalla &rarr;</button></div>
+  </div>`;
+}
+
+function renderJefeSelectCategory(){
+  const cats = Object.values((state.torneo && state.torneo.categories)||{}).filter(c=>c.live);
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Jefe de mesa</h2><span></span></div>
+    <div class="scroll">
+      ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo.<br>Ve a Mesa y toca "anotar en vivo" en un combate pendiente.</div>` :
+        cats.map(c=>`
+          <div class="picklistitem" onclick="goTo('jefe_control',{catId:'${c.id}'})">
+            <div><div class="nm">${escapeHtml(c.live.fighterA.name)} vs ${escapeHtml(c.live.fighterB.name)}</div>
+            <div class="meta">${escapeHtml(c.nombre)} &middot; asalto ${c.live.round}/${c.live.roundsTotal} &middot; ${c.live.scoreRed}-${c.live.scoreBlue}</div></div>
+            <span class="livepill">EN VIVO</span>
+          </div>`).join('')}
+      <div style="height:20px;"></div>
+    </div>
+  </div>`;
+}
+function renderJefeControl(){
+  const cat = currentCat();
+  if (!cat || !cat.live) return renderCenterMsg('Este combate ya no esta en vivo.');
+  const live = cat.live;
+  const remaining = getRemainingMs(live);
+  const modeLabel = live.mode==='PF' ? 'Point Fighting' : 'Light Contact';
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goTo('jefe_selectCategory')">&larr; combates</button><h2 style="font-size:15px;">${escapeHtml(cat.nombre)}</h2><span></span></div>
+    <div class="scroll">
+      <div style="text-align:center; padding:0 16px;">
+        <div class="eyebrow">${modeLabel}</div>
+        <div class="roundpill">Asalto ${live.round} / ${live.roundsTotal}</div>
+      </div>
+
+      <div class="timer"><div class="t">${fmtTime(remaining)}</div>
+        <div class="timerbtns">
+          <button class="btn-sm ${live.timerRunning?'on':''}" onclick="startTimer()">iniciar</button>
+          <button class="btn-sm" onclick="pauseTimer()">pausar</button>
+          <button class="btn-sm" onclick="resetTimer()">reiniciar</button>
+        </div>
+        <div class="timerbtns">
+          <button class="btn-sm" onclick="adjustTime(-30)">-30s</button>
+          <button class="btn-sm" onclick="adjustTime(-10)">-10s</button>
+          <button class="btn-sm" onclick="adjustTime(10)">+10s</button>
+          <button class="btn-sm" onclick="adjustTime(30)">+30s</button>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn-sm on" onclick="nextRound()" ${live.round>=live.roundsTotal?'disabled style="opacity:.35;"':''}>siguiente asalto &rarr;</button>
+        </div>
+      </div>
+
+      <div class="dscores" style="min-height:190px;">
+        <div class="dside left"><span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="fclub">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="score">${live.scoreRed}</span>
+          <div class="warndots">${warnDots(live.warningsRed)}</div><div class="fclub">Faltas: ${live.warningsRed}/4</div>
+          <div class="warnrow"><button class="btn-sm warn" onclick="addFoul('red')">+ falta</button>${live.warningsRed>0?`<button class="link" onclick="undoFoul('red')">quitar</button>`:''}</div>
+        </div>
+        <div class="dside right"><span class="corner">Azul</span><span class="name">${escapeHtml(live.fighterB.name)}</span>${live.fighterB.club?`<span class="fclub">${escapeHtml(live.fighterB.club)}</span>`:''}<span class="score">${live.scoreBlue}</span>
+          <div class="warndots">${warnDots(live.warningsBlue)}</div><div class="fclub">Faltas: ${live.warningsBlue}/4</div>
+          <div class="warnrow"><button class="btn-sm warn" onclick="addFoul('blue')">+ falta</button>${live.warningsBlue>0?`<button class="link" onclick="undoFoul('blue')">quitar</button>`:''}</div>
+        </div>
+      </div>
+      ${perJudgeBreakdown(live)}
+
+      <div class="dlog" style="padding:8px 16px;"><div class="lbl">Ultimos eventos</div><div class="items">${(live.log||[]).slice(0,6).map(l=>`<div>${escapeHtml(l.text)}</div>`).join('')}</div></div>
+
+      <div style="padding:10px 16px; display:flex; flex-direction:column; gap:8px;">
+        ${live.scoreRed!==live.scoreBlue ? `<button class="btn btn-green" onclick="finalizeLive('${cat.id}')">Finalizar combate (gana ${live.scoreRed>live.scoreBlue?escapeHtml(live.fighterA.name):escapeHtml(live.fighterB.name)})</button>` :
+          `<div class="hint" style="margin:0 0 4px;">Empate - elige ganador manualmente:</div>
+           <button class="btn btn-dark" onclick="finalizeLive('${cat.id}','A')">Gana ${escapeHtml(live.fighterA.name)} (Rojo)</button>
+           <button class="btn btn-dark" onclick="finalizeLive('${cat.id}','B')">Gana ${escapeHtml(live.fighterB.name)} (Azul)</button>`}
+        <button class="link" onclick="resetLiveScores()">reiniciar marcador y advertencias</button>
+        <button class="link" onclick="goTo('display_view')">ver pantalla publica &rarr;</button>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>`;
+}
+
+function renderDisplaySelectCategory(){
+  const cats = Object.values((state.torneo && state.torneo.categories)||{}).sort((a,b)=>a.createdAt-b.createdAt);
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Pantalla publica</h2><span></span></div>
+    <div class="scroll">
+      ${cats.length===0 ? `<div class="emptylist">Aun no hay categorias creadas.</div>` :
+        cats.map(c=>`
+          <div class="picklistitem" onclick="goTo('display_view',{catId:'${c.id}'})">
+            <div><div class="nm">${escapeHtml(c.nombre)}</div><div class="meta">${(c.bracketClosed ? (c.slots||[]).filter(Boolean).length : c.roster.length)}/16 &middot; ${c.bracketClosed?'Llave cerrada':'Inscripciones abiertas'}</div></div>
+            ${c.live?`<span class="livepill">EN VIVO</span>`:''}
+          </div>`).join('')}
+      <div style="height:20px;"></div>
+    </div>
+  </div>`;
+}
+function renderDisplayView(){
+  const cat = currentCat();
+  if (!cat) return renderCenterMsg('Categoria no encontrada.');
+  if (cat.live) return renderDisplayLive(cat);
+  return renderDisplayBracket(cat);
+}
+function renderDisplayLive(cat){
+  const live = cat.live;
+  const modeLabel = live.mode==='PF' ? 'Point Fighting' : 'Light Contact';
+  const remaining = getRemainingMs(live);
+  root.innerHTML = `
+  <div class="col">${belt()}
+    <div class="dtitle"><div class="name">${escapeHtml(cat.nombre)}</div>
+      <div class="meta">Academia Pukem Kwan</div>
+      <div style="margin-top:6px;">${catBadges(cat)}</div>
+      <div class="roundpill">Asalto ${live.round} / ${live.roundsTotal}</div>
+    </div>
+    <div class="timer"><div class="t">${fmtTime(remaining)}</div></div>
+    <div class="dscores">
+      <div class="dside left"><span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="fclub">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="score">${live.scoreRed}</span>
+        <div class="warndots">${warnDots(live.warningsRed)}</div><div class="fclub">Faltas: ${live.warningsRed}/4</div>
+      </div>
+      <div class="dside right"><span class="corner">Azul</span><span class="name">${escapeHtml(live.fighterB.name)}</span>${live.fighterB.club?`<span class="fclub">${escapeHtml(live.fighterB.club)}</span>`:''}<span class="score">${live.scoreBlue}</span>
+        <div class="warndots">${warnDots(live.warningsBlue)}</div><div class="fclub">Faltas: ${live.warningsBlue}/4</div>
+      </div>
+    </div>
+    ${perJudgeBreakdown(live)}
+    <div class="dlog"><div class="lbl">Ultimos eventos</div><div class="items">${(live.log||[]).slice(0,5).map(l=>`<div>${escapeHtml(l.text)}</div>`).join('')}</div></div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoria</button><button class="link" onclick="goHome()">salir</button></div>
+  ${belt()}</div>`;
+}
+function renderDisplayBracket(cat){
+  const rounds = buildBracket(cat);
+  root.innerHTML = `
+  <div class="col">${belt()}
+    <div class="dtitle"><div class="name">${escapeHtml(cat.nombre)}</div><div class="meta">Academia Pukem Kwan</div><div style="margin-top:6px;">${catBadges(cat)}</div></div>
+    <div class="scroll">
+      ${!cat.bracketClosed ? `<div class="emptylist">Inscripciones abiertas - la llave aun no se ha generado.<br>${cat.roster.length} inscrito(s) hasta ahora.</div>` :
+        rounds.map(r=>`<div class="roundblock"><h3>${r.name}</h3>${r.matches.map(m=>renderMatchCardDisplay(m)).join('') || '<div class="matchstatus">-</div>'}</div>`).join('')}
+      <div style="height:20px;"></div>
+    </div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoria</button><button class="link" onclick="goHome()">salir</button></div>
+  ${belt()}</div>`;
+}
+function renderMatchCardDisplay(m){
+  if (m.status==='empty') return '';
+  const nameHtml = (f, isWinner) => f ? `<span class="fname ${isWinner?'win':''}">${escapeHtml(f.name)}</span>` : `<span class="fname dim">-</span>`;
+  if (m.status==='waiting') return `<div class="matchcard"><div class="matchstatus">Por definir</div></div>`;
+  if (m.status==='bye') return `<div class="matchcard">${nameHtml(m.A,true)}<div class="matchvs">bye</div>${m.B?nameHtml(m.B,false):''}<div class="matchstatus">avanza directo</div></div>`;
+  if (m.status==='live') return `<div class="matchcard">${nameHtml(m.A,false)}<div class="matchvs">en vivo</div>${nameHtml(m.B,false)}</div>`;
+  if (m.status==='pending') return `<div class="matchcard">${nameHtml(m.A,false)}<div class="matchvs">vs</div>${nameHtml(m.B,false)}</div>`;
+  return `<div class="matchcard">${nameHtml(m.A,m.winnerSide==='A')}<div class="matchvs">vs</div>${nameHtml(m.B,m.winnerSide==='B')}</div>`;
+}
+
+function renderCenterMsg(msg){ root.innerHTML = `<div class="col"><div class="center-msg">${msg}</div></div>`; }
+
+/* ------------------------------------ arranque ------------------------------------ */
+(async function init(){
+  await restoreSession();
+  await loadTorneo();
+  setupTimersForView();
+  render();
+})();
+</script>
+</body>
+</html>
