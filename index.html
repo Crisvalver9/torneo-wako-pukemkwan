@@ -75,6 +75,9 @@
   .catcard .meta{color:var(--muted); font-size:12px; margin-top:3px;}
   .badge{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:99px; background:var(--panel2); color:var(--muted); margin-right:5px; margin-bottom:4px;}
   .badge.pf{color:var(--red-l);} .badge.lc{color:var(--blue-l);}
+  .badge.tatami{background:var(--amber); color:#1a1206; font-weight:800;}
+  .tatamihead{font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--amber); padding:14px 16px 6px; border-top:1px solid var(--line); margin-top:4px;}
+  .tatamihead:first-child{border-top:none; margin-top:0; padding-top:2px;}
   .badge.open{color:var(--amber);} .badge.closed{color:var(--green);}
 
   .fighterrow{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px;}
@@ -261,6 +264,7 @@ function normalizeTorneo(data){
 function emptyCategory(id, form){
   return {
     id,
+    tatami: (form.tatami||'').trim() || 'Tatami 1',
     nombre: form.nombre || autoName(form),
     modalidad: form.modalidad || 'PF',
     divisionEdad: form.divisionEdad || 'S',
@@ -398,9 +402,9 @@ function findMatch(cat, matchId){
 }
 
 /* --------------------------------- estado -------------------------------- */
-const state = { view:'home', torneo:null, loading:true, catId:null, judgeId:null, flash:'' };
+const state = { view:'home', torneo:null, loading:true, catId:null, judgeId:null, flash:'', pinOk:false };
 const dR = WAKO_DEFAULT_ROUNDS.YC;
-const newCatForm = { nombre:'', modalidad:'PF', divisionEdad:'', sexo:'M', peso:'', cinturon:'color', numJudges:3, numRounds:dR.n, roundDuration:dR.d };
+const newCatForm = { tatami:'Tatami 1', nombre:'', modalidad:'PF', divisionEdad:'', sexo:'M', peso:'', cinturon:'color', numJudges:3, numRounds:dR.n, roundDuration:dR.d };
 const fighterForm = { name:'', club:'' };
 let pollTimer=null, tickTimer=null, resolveTimer=null;
 let writeSeq = 0;
@@ -458,6 +462,54 @@ async function deleteCategoryRemote(catId){
   render();
   try{ await fetch(FIREBASE_URL + '/torneo/categories/' + catId + '.json', {method:'DELETE'}); }catch(e){}
 }
+/* PIN opcional para las acciones delicadas (declarar ganador manual, reabrir
+   llave, eliminar categoria, y el rol completo de Jefe de Mesa) - protege
+   contra que alguien altere resultados ya decididos. Inscribir luchadores,
+   crear categorias y votar como juez quedan siempre libres, sin PIN.
+   Si el organizador no configura PIN, todo sigue abierto como antes. */
+async function putPin(pin){
+  state.torneo = {...state.torneo, pin};
+  writeSeq++;
+  render();
+  try{ await fetch(FIREBASE_URL + '/torneo/pin.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(pin)}); }catch(e){}
+}
+function checkPin(){
+  const pin = state.torneo && state.torneo.pin;
+  if (!pin) return true;
+  if (state.pinOk) return true;
+  try{ if (localStorage.getItem('wako_pin_ok_' + pin) === '1'){ state.pinOk = true; return true; } }catch(e){}
+  const entered = prompt('PIN de mesa / jefe de mesa:');
+  if (entered === null) return false;
+  if (entered === pin){
+    state.pinOk = true;
+    try{ localStorage.setItem('wako_pin_ok_' + pin, '1'); }catch(e){}
+    return true;
+  }
+  alert('PIN incorrecto.');
+  return false;
+}
+/* Respaldo descargable de todo el torneo (categorias, inscritos, llaves y
+   resultados) - por si se necesita borrar Firebase para el proximo torneo,
+   esto queda guardado en el celular/computador de quien lo descargue. */
+function descargarRespaldo(){
+  const data = JSON.stringify(state.torneo, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  a.href = url; a.download = `torneo-wako-respaldo-${ts}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function configurarPin(){
+  const actual = state.torneo && state.torneo.pin;
+  const nuevo = prompt(actual ? 'Cambiar PIN (dejar vacío para quitar la protección):' : 'Crear un PIN para Jefe de Mesa y acciones delicadas (dejar vacío para no usar PIN):', actual||'');
+  if (nuevo === null) return;
+  const clean = nuevo.trim();
+  putPin(clean || null);
+  if (clean){ state.pinOk = true; try{ localStorage.setItem('wako_pin_ok_' + clean, '1'); }catch(e){} }
+  render();
+}
 function currentCat(){ return state.torneo && state.catId ? state.torneo.categories[state.catId] : null; }
 function vibrate(ms){ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} }
 
@@ -494,6 +546,7 @@ function setupTimersForView(){
   }
 }
 function goTo(view, extra){
+  if ((view==='jefe_selectCategory' || view==='jefe_control') && !checkPin()) return;
   state.view = view;
   if (extra) Object.assign(state, extra);
   saveSession({view:state.view, catId:state.catId, judgeId:state.judgeId});
@@ -511,6 +564,7 @@ function createCategory(){
   goTo('mesa_category', {catId:id});
 }
 function deleteCategory(catId){
+  if (!checkPin()) return;
   if (!confirm('\u00bfEliminar esta categor\u00eda y toda su llave? Esta acci\u00f3n no se puede deshacer.')) return;
   deleteCategoryRemote(catId);
   goTo('mesa_home');
@@ -548,12 +602,14 @@ function closeBracket(catId){
   putCategory(catId, next);
 }
 function reopenBracket(catId){
+  if (!checkPin()) return;
   const cat = state.torneo.categories[catId];
   if (Object.keys(cat.results||{}).length>0){ alert('No se puede reabrir: ya hay resultados registrados en esta llave.'); return; }
   const roster = (cat.slots||[]).filter(Boolean);
   putCategory(catId, {...cat, roster, slots:[], bracketClosed:false});
 }
 function declareWinner(catId, matchId, side){
+  if (!checkPin()) return;
   const cat = state.torneo.categories[catId];
   const m = findMatch(cat, matchId);
   if (!m || !m.A || !m.B) return;
@@ -749,7 +805,8 @@ function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, fu
 const MODALIDAD_LABELS = { PF:'Point Fighting', LC:'Light Contact', KL:'Kick Light' };
 function modalidadLabel(m){ return MODALIDAD_LABELS[m] || m; }
 function catBadges(cat){
-  return `<span class="badge ${cat.modalidad==='PF'?'pf':'lc'}">${modalidadLabel(cat.modalidad)}</span>`+
+  return `<span class="badge tatami">${escapeHtml(cat.tatami||'Tatami 1')}</span>`+
+    `<span class="badge ${cat.modalidad==='PF'?'pf':'lc'}">${modalidadLabel(cat.modalidad)}</span>`+
     `<span class="badge">${escapeHtml(divisionLabel(cat.divisionEdad))}</span>`+
     `<span class="badge">${cat.sexo==='F'?'Femenino':'Masculino'}</span>`+
     (cat.peso?`<span class="badge">${escapeHtml(cat.peso)}</span>`:'')+
@@ -758,6 +815,19 @@ function catBadges(cat){
     `<span class="badge ${cat.bracketClosed?'closed':'open'}">${cat.bracketClosed?'Llave cerrada':'Inscripciones abiertas'}</span>`;
 }
 function warnDots(n){ let h=''; for(let i=1;i<=4;i++) h+=`<span class="warndot ${i<=n?'on':''}"></span>`; return h; }
+/* Agrupa una lista de categorias por tatami/cancha, para que con varios
+   tatamis corriendo a la vez cada jefe de mesa/juez encuentre el suyo rapido
+   sin tener que leer el nombre completo de cada categoria una por una. */
+function groupByTatami(cats){
+  const groups = {};
+  cats.forEach(c => { const t = c.tatami || 'Tatami 1'; (groups[t] = groups[t]||[]).push(c); });
+  return Object.keys(groups).sort((a,b)=>a.localeCompare(b,'es',{numeric:true})).map(t => ({tatami:t, cats:groups[t]}));
+}
+function renderTatamiGroups(cats, itemFn){
+  return groupByTatami(cats).map(g =>
+    `<div class="tatamihead">${escapeHtml(g.tatami)}</div>${g.cats.map(itemFn).join('')}`
+  ).join('');
+}
 function perJudgeBreakdown(live){
   if (live.mode === 'PF') return '';
   const n = live.numJudges || 3;
@@ -809,12 +879,16 @@ function renderMesaHome(){
     <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Categorías</h2><button class="btn-sm on" onclick="goTo('mesa_newCategory')">+ Nueva</button></div>
     <div class="scroll">
       ${cats.length===0 ? `<div class="emptylist">Aún no hay categorías.<br>Crea la primera con "+ Nueva".</div>` :
-        cats.map(cat=>`
+        renderTatamiGroups(cats, cat=>`
           <div class="catcard" onclick="goTo('mesa_category',{catId:'${cat.id}'})">
             <div class="nm">${escapeHtml(cat.nombre)} ${cat.live?'<span class="livepill">EN VIVO</span>':''}</div>
             <div class="meta">${catBadges(cat)}</div>
             <div class="meta" style="margin-top:6px;">Inscritos: ${cat.bracketClosed ? (cat.slots||[]).filter(Boolean).length + '/16 (llave cerrada)' : cat.roster.length + '/16'}</div>
-          </div>`).join('')}
+          </div>`)}
+      <div style="text-align:center; margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+        ${cats.length>0 ? `<button class="link" onclick="descargarRespaldo()">descargar respaldo de categorías y resultados</button>` : ''}
+        <button class="link" onclick="configurarPin()">${state.torneo && state.torneo.pin ? 'cambiar PIN de protección' : 'proteger con PIN (opcional)'}</button>
+      </div>
       <div style="height:20px;"></div>
     </div>
   </div>`;
@@ -829,6 +903,10 @@ function renderNewCategory(){
       <button class="link" onclick="goTo('mesa_home')" style="margin-bottom:14px;">&larr; volver</button>
       <h2 style="font-size:21px; font-weight:900; margin:0 0 4px;">Nueva categoría</h2>
       <div class="hint" style="margin-top:2px;">Divisiones y pesos según reglamento oficial WAKO (Tatami Rules, Cap. 2)</div>
+
+      <label>Tatami / cancha</label>
+      <input class="field" value="${escapeHtml(f.tatami)}" oninput="newCatForm.tatami=this.value" placeholder="Tatami 1" />
+      <div class="hint" style="margin-top:-10px;">Escribe el nombre que uses para identificar la mesa/cancha (Tatami 1, Ring A, etc.). Los jefes de mesa y jueces la usan para encontrar sus combates cuando hay varias corriendo a la vez.</div>
 
       <label>Modalidad</label>
       <div class="grid3">
@@ -999,12 +1077,12 @@ function renderJudgeSelectCategory(){
     <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Combates en vivo</h2><span></span></div>
     <div class="scroll">
       ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo por el momento.<br>Pídele a mesa que inicie uno.</div>` :
-        cats.map(c=>`
+        renderTatamiGroups(cats, c=>`
           <div class="picklistitem" onclick="goTo('judge_selectSlot',{catId:'${c.id}'})">
             <div><div class="nm">${escapeHtml(c.live.fighterA.name)} vs ${escapeHtml(c.live.fighterB.name)}</div>
             <div class="meta">${escapeHtml(c.nombre)} &middot; asalto ${c.live.round}/${c.live.roundsTotal}</div></div>
             <span class="livepill">EN VIVO</span>
-          </div>`).join('')}
+          </div>`)}
       <div style="height:20px;"></div>
     </div>
   </div>`;
@@ -1070,12 +1148,12 @@ function renderJefeSelectCategory(){
     <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Jefe de mesa</h2><span></span></div>
     <div class="scroll">
       ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo.<br>Ve a Mesa y toca "anotar en vivo" en un combate pendiente.</div>` :
-        cats.map(c=>`
+        renderTatamiGroups(cats, c=>`
           <div class="picklistitem" onclick="goTo('jefe_control',{catId:'${c.id}'})">
             <div><div class="nm">${escapeHtml(c.live.fighterA.name)} vs ${escapeHtml(c.live.fighterB.name)}</div>
             <div class="meta">${escapeHtml(c.nombre)} &middot; asalto ${c.live.round}/${c.live.roundsTotal} &middot; ${c.live.scoreRed}-${c.live.scoreBlue}</div></div>
             <span class="livepill">EN VIVO</span>
-          </div>`).join('')}
+          </div>`)}
       <div style="height:20px;"></div>
     </div>
   </div>`;
@@ -1169,11 +1247,11 @@ function renderDisplaySelectCategory(){
     <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Pantalla pública</h2><span></span></div>
     <div class="scroll">
       ${cats.length===0 ? `<div class="emptylist">Aún no hay categorías creadas.</div>` :
-        cats.map(c=>`
+        renderTatamiGroups(cats, c=>`
           <div class="picklistitem" onclick="goTo('display_view',{catId:'${c.id}'})">
             <div><div class="nm">${escapeHtml(c.nombre)}</div><div class="meta">${(c.bracketClosed ? (c.slots||[]).filter(Boolean).length : c.roster.length)}/16 &middot; ${c.bracketClosed?'Llave cerrada':'Inscripciones abiertas'}</div></div>
             ${c.live?`<span class="livepill">EN VIVO</span>`:''}
-          </div>`).join('')}
+          </div>`)}
       <div style="height:20px;"></div>
     </div>
   </div>`;
