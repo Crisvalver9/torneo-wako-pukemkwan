@@ -583,7 +583,12 @@ function goHome(){ state.catId=null; state.judgeId=null; goTo('home'); }
 function createCategory(){
   const id = uid('cat');
   const cat = emptyCategory(id, newCatForm);
-  Object.assign(newCatForm, { nombre:'', divisionEdad:'', sexo:'M', peso:'', cinturon:'color', modalidad:'PF', numJudges:3, numRounds:dR.n, roundDuration:dR.d });
+  /* Solo se resetean nombre/division/peso, que casi siempre cambian de una
+     categoria a otra. Modalidad, sexo, cinturon, jueces, asaltos y duracion
+     quedan tal cual quedaron, porque la mesa suele crear varias categorias
+     seguidas con el mismo formato (ej. todas Point Fighting, 3 jueces) y
+     tener que re-elegir eso cada vez era friccion innecesaria. */
+  Object.assign(newCatForm, { nombre:'', divisionEdad:'', peso:'' });
   putCategory(id, cat);
   goTo('mesa_category', {catId:id});
 }
