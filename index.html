@@ -144,6 +144,21 @@
   .winner-club{font-size:13px; color:var(--muted); text-align:center;}
   .winner-score{font-size:22px; font-weight:800; margin-top:6px;}
   .winner-vs{font-size:12.5px; color:var(--muted2); text-align:center;}
+  .podio{max-width:420px; margin:22px auto 0; padding:0 20px;}
+  .podiorow{display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--line);}
+  .podiorow:last-child{border-bottom:none;}
+  .podioplace{flex-shrink:0; width:88px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--amber);}
+  .podioname{font-size:16px; font-weight:800;}
+  .podioclub{font-size:12px; color:var(--muted);}
+  @media print{
+    .noprint{display:none !important;}
+    body{background:#fff; color:#000;}
+    .certificado{color:#000;}
+    .podioplace{color:#92400e;}
+    .eyebrow,.podioclub,.hint{color:#555 !important;}
+    .badge{background:#eee !important; color:#333 !important;}
+    .logo-wrap{box-shadow:none;}
+  }
   .timer{text-align:center; padding:8px 0;}
   .timer .t{font-size:44px; font-weight:900; font-variant-numeric:tabular-nums; font-family:'Barlow Condensed',monospace; letter-spacing:.02em;}
   .timerbtns{display:flex; justify-content:center; gap:7px; margin-top:6px; flex-wrap:wrap; padding:0 10px;}
@@ -424,6 +439,19 @@ function findMatch(cat, matchId){
   for (const r of rounds) for (const m of r.matches) if (m.id===matchId) return m;
   return null;
 }
+function getPodium(cat){
+  const rounds = buildBracket(cat);
+  const final = rounds.find(r=>r.name==='Final').matches[0];
+  const third = rounds.find(r=>r.name==='3° y 4° puesto').matches[0];
+  const finalDone = final.status==='done' || final.status==='bye';
+  const thirdDone = third.status==='done' || third.status==='bye';
+  return {
+    first: finalDone ? final.winner : null,
+    second: finalDone ? final.loser : null,
+    third: thirdDone ? third.winner : null,
+    fourth: thirdDone ? third.loser : null,
+  };
+}
 
 /* --------------------------------- estado -------------------------------- */
 const state = { view:'home', torneo:null, loading:true, catId:null, judgeId:null, flash:'', pinOk:false };
@@ -603,11 +631,16 @@ function addFighter(catId){
   if (!cat || cat.roster.length>=16) return;
   const name = (fighterForm.name||'').trim();
   if (!name) return;
-  const fighter = {name, club:(fighterForm.club||'').trim()};
+  const fighter = {name, club:(fighterForm.club||'').trim(), pesado:false};
   let next = {...cat, roster:[...cat.roster, fighter]};
   next = pushCatLog(next, `Inscrito: ${name}`);
   fighterForm.name=''; fighterForm.club='';
   putCategory(catId, next);
+}
+function togglePesado(catId, idx){
+  const cat = state.torneo.categories[catId];
+  const roster = cat.roster.map((f,i)=> i===idx ? {...f, pesado: !f.pesado} : f);
+  putCategory(catId, {...cat, roster});
 }
 function removeFighter(catId, idx){
   const cat = state.torneo.categories[catId];
@@ -874,6 +907,7 @@ function render(){
   if (state.loading){ root.innerHTML=''; return; }
   const fns = {
     home:renderHome, mesa_home:renderMesaHome, mesa_newCategory:renderNewCategory, mesa_category:renderMesaCategory,
+    mesa_certificate:renderCertificado,
     judge_selectCategory:renderJudgeSelectCategory, judge_selectSlot:renderJudgeSelectSlot, judge_vote:renderJudgeVote,
     jefe_selectCategory:renderJefeSelectCategory, jefe_control:renderJefeControl,
     display_selectCategory:renderDisplaySelectCategory, display_view:renderDisplayView,
@@ -1024,13 +1058,15 @@ function renderMesaCategory(){
 }
 
 function renderRosterSection(cat){
+  const pesados = cat.roster.filter(f=>f.pesado).length;
   return `
     <div style="padding:6px 16px;">
-      <label>Luchadores inscritos (${cat.roster.length}/16)</label>
+      <label>Luchadores inscritos (${cat.roster.length}/16)${cat.roster.length>0?` &middot; ${pesados}/${cat.roster.length} pesados`:''}</label>
       ${cat.roster.length===0 ? `<div class="emptylist" style="padding:16px 0;">Nadie inscrito todavia.</div>` :
         cat.roster.map((f,i)=>`
           <div class="fighterrow"><span class="n">${i+1}</span>
             <div class="info"><div>${escapeHtml(f.name)}</div>${f.club?`<div class="club">${escapeHtml(f.club)}</div>`:''}</div>
+            <button class="btn-sm ${f.pesado?'on':''}" style="flex-shrink:0;" onclick="togglePesado('${cat.id}', ${i})">${f.pesado?'✓ pesado':'pesar'}</button>
             <button class="link" onclick="removeFighter('${cat.id}', ${i})">quitar</button>
           </div>`).join('')}
     </div>
@@ -1046,7 +1082,8 @@ function renderRosterSection(cat){
     </div>
     <div style="padding:14px 16px 0;">
       <button class="btn btn-green" onclick="closeBracket('${cat.id}')" ${cat.roster.length<2?'disabled style="opacity:.4;"':''}>Cerrar inscripciones y generar llave</button>
-      ${cat.roster.length<2 ? `<div class="matchstatus" style="text-align:center; margin-top:6px;">Mínimo 2 luchadores para generar la llave.</div>` : ''}
+      ${cat.roster.length<2 ? `<div class="matchstatus" style="text-align:center; margin-top:6px;">Mínimo 2 luchadores para generar la llave.</div>` :
+        (pesados<cat.roster.length ? `<div class="matchstatus" style="text-align:center; margin-top:6px; color:var(--amber-pale);">${cat.roster.length-pesados} luchador(es) sin marcar como pesado(s) todavía.</div>` : '')}
     </div>`;
 }
 
@@ -1086,10 +1123,12 @@ function renderMatchCard(cat, m){
 }
 function renderBracketSection(cat){
   const rounds = buildBracket(cat);
+  const podio = getPodium(cat);
   return `
     <div>
-      <div style="padding:0 16px; margin-top:6px;">
+      <div style="padding:0 16px; margin-top:6px; display:flex; justify-content:space-between;">
         <button class="link" onclick="reopenBracket('${cat.id}')">reabrir inscripciones</button>
+        ${podio.first ? `<button class="link" onclick="goTo('mesa_certificate',{catId:'${cat.id}'})">ver certificado de resultados &rarr;</button>` : ''}
       </div>
       ${rounds.map(r=>`
         <div class="roundblock">
@@ -1097,6 +1136,37 @@ function renderBracketSection(cat){
           ${r.matches.map(m=>renderMatchCard(cat,m)).join('') || '<div class="matchstatus">-</div>'}
         </div>`).join('')}
     </div>`;
+}
+function renderCertificado(){
+  const cat = currentCat();
+  if (!cat) return renderCenterMsg('Categoría no encontrada.');
+  const podio = getPodium(cat);
+  const row = (place, f) => f ? `
+    <div class="podiorow">
+      <span class="podioplace">${place}</span>
+      <div class="podioinfo"><div class="podioname">${escapeHtml(f.name)}</div>${f.club?`<div class="podioclub">${escapeHtml(f.club)}</div>`:''}</div>
+    </div>` : '';
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar noprint"><button class="link" onclick="goTo('mesa_category',{catId:'${cat.id}'})">&larr; volver</button><span></span><button class="btn-sm on" onclick="window.print()">Imprimir / PDF</button></div>
+    <div class="scroll certificado">
+      <div class="logo-wrap" style="margin:10px auto 6px;"><img src="${LOGO_SRC}" alt="" /></div>
+      <div style="text-align:center;">
+        <div class="eyebrow">Academia Pukem Kwan &middot; Castro</div>
+        <h1 style="font-size:24px; margin-top:4px;">Resultados</h1>
+        <div style="font-weight:800; font-size:16px; margin-top:6px;">${escapeHtml(cat.nombre)}</div>
+        <div style="margin-top:8px;">${catBadges(cat)}</div>
+      </div>
+      <div class="podio">
+        ${row('1er lugar', podio.first)}
+        ${row('2do lugar', podio.second)}
+        ${row('3er lugar', podio.third)}
+        ${row('4to lugar', podio.fourth)}
+      </div>
+      <div class="hint" style="text-align:center; margin-top:26px;">Torneo WAKO &middot; Academia Pukem Kwan, Castro</div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>`;
 }
 
 function renderJudgeSelectCategory(){
