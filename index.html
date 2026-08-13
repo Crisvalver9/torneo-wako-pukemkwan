@@ -654,11 +654,20 @@ function shuffleRoster(catId){
   for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp; }
   putCategory(catId, {...cat, roster:arr});
 }
+/* Orden estandar de siembra de llave (16 casillas): al llenar las casillas
+   en este orden en vez de secuencial, los luchadores y los "bye" quedan
+   repartidos parejo por TODA la llave en vez de amontonarse en las primeras
+   casillas. Con el llenado secuencial anterior, con menos de 16 inscritos
+   toda la mitad inferior quedaba vacia y la Final terminaba siendo casi
+   automatica para quien ganara la mitad superior - este orden lo evita. */
+const BRACKET_SEED_ORDER = [0,15,7,8,3,12,4,11,1,14,6,9,2,13,5,10];
 function closeBracket(catId){
   const cat = state.torneo.categories[catId];
   if (cat.roster.length < 2) return;
+  const shuffled = [...cat.roster];
+  for (let i=shuffled.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const tmp=shuffled[i]; shuffled[i]=shuffled[j]; shuffled[j]=tmp; }
   const slots = new Array(16).fill(null);
-  cat.roster.forEach((f,i)=>{ slots[i]=f; });
+  shuffled.forEach((f,i)=>{ slots[BRACKET_SEED_ORDER[i]]=f; });
   let next = {...cat, slots, bracketClosed:true};
   next = pushCatLog(next, `Llave generada con ${cat.roster.length} luchador(es)`);
   putCategory(catId, next);
