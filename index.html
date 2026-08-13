@@ -273,6 +273,20 @@ function objFromMaybeArray(v){
   }
   return v || {};
 }
+/* Inverso de objFromMaybeArray: Firebase Realtime Database es inconsistente
+   con arreglos dispersos (ej. "slots" de la llave, donde la mayoria de las
+   16 casillas son null) - a veces los devuelve como arreglo con huecos, a
+   veces como objeto disperso {"0":.., "15":..}. Esto reconstruye siempre un
+   arreglo de "length" elementos sin importar cual de las dos formas llego. */
+function arrayFromMaybeSparse(v, length){
+  const out = new Array(length).fill(null);
+  if (Array.isArray(v)){
+    for (let i=0;i<Math.min(v.length,length);i++) out[i] = v[i] || null;
+  } else if (v && typeof v === 'object'){
+    Object.keys(v).forEach(k => { const i = Number(k); if (Number.isInteger(i) && i>=0 && i<length) out[i] = v[k]; });
+  }
+  return out;
+}
 function normalizeLive(live){
   if (!live) return live;
   const perJudgeDefault = {1:{red:0,blue:0},2:{red:0,blue:0},3:{red:0,blue:0},4:{red:0,blue:0}};
@@ -287,7 +301,7 @@ function normalizeCategory(cat){
   return {
     ...cat,
     roster: cat.roster || [],
-    slots: cat.slots || [],
+    slots: arrayFromMaybeSparse(cat.slots, 16),
     results: cat.results || {},
     log: cat.log || [],
     live: cat.live ? normalizeLive(cat.live) : null,
