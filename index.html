@@ -943,6 +943,12 @@ function perJudgeBreakdown(live){
 function belt(){ return `<div class="belt"><div class="b-y"></div><div class="b-g"></div><div class="b-b"></div><div class="b-r"></div><div class="b-k"></div></div>`; }
 function render(){
   if (state.loading){ root.innerHTML=''; return; }
+  /* Cada actualizacion automatica (sync con Firebase) reconstruye toda la
+     pantalla, lo que crea un contenedor .scroll nuevo desde cero. Sin este
+     rescate, cualquiera que estuviera bajando con el dedo/mouse quedaba
+     tironeado de vuelta arriba cada vez que llegaba una actualizacion. */
+  const prevScroll = document.querySelector('.scroll');
+  const scrollTop = prevScroll ? prevScroll.scrollTop : 0;
   const fns = {
     home:renderHome, mesa_home:renderMesaHome, mesa_newCategory:renderNewCategory, mesa_category:renderMesaCategory,
     mesa_certificate:renderCertificado,
@@ -951,6 +957,10 @@ function render(){
     display_selectCategory:renderDisplaySelectCategory, display_view:renderDisplayView,
   };
   (fns[state.view]||renderHome)();
+  if (scrollTop){
+    const newScroll = document.querySelector('.scroll');
+    if (newScroll) newScroll.scrollTop = scrollTop;
+  }
 }
 
 function renderHome(){
