@@ -30,12 +30,12 @@
   #root{height:100vh; height:100dvh; display:flex; flex-direction:column;}
   button{font-family:inherit; border:none; cursor:pointer; color:inherit; background:none;}
   select{font-family:inherit;}
-  .scroll{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .scroll{flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .belt{display:flex; height:6px; width:100%; flex-shrink:0;}
   .belt div{flex:1;}
   .b-y{background:#eab308;} .b-g{background:#22c55e;} .b-b{background:#2563eb;}
   .b-r{background:#dc2626;} .b-k{background:#171717;}
-  .col{display:flex; flex-direction:column; height:100%;}
+  .col{display:flex; flex-direction:column; height:100%; min-height:0;}
   .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 24px; gap:26px;}
   .eyebrow{font-size:11px; letter-spacing:.3em; color:var(--muted); text-transform:uppercase; text-align:center;}
   .logo-wrap{width:88px; height:88px; margin:0 auto 4px; border-radius:50%; overflow:hidden; box-shadow:0 0 0 2px var(--line); background:#000;}
@@ -172,6 +172,18 @@
   .dside.left .name{color:var(--red-l);}
   .dside.right .name{color:var(--blue-l);}
   .dside .score{font-weight:900; font-size:52px; line-height:1; margin-top:6px;}
+  /* Pantalla publica en TV grande: el marcador de .dside/.timer se ve chico
+     en relacion al tamaño real de la pantalla (los px son iguales sea un
+     celular o un televisor de 55"). Estas reglas SOLO aplican dentro de
+     .tvscale (que solo se agrega en la vista de pantalla publica en vivo),
+     nunca en Jefe de Mesa, que usa estas mismas clases pero mas chicas. */
+  .tvscale .timer .t{font-size:clamp(44px, 7vw, 150px);}
+  .tvscale .dside .corner{font-size:clamp(10.5px, 1.6vw, 28px);}
+  .tvscale .dside .name{font-size:clamp(15px, 2.6vw, 46px);}
+  .tvscale .dside .score{font-size:clamp(52px, 10vw, 220px);}
+  .tvscale .dtitle .name{font-size:clamp(17px, 2.8vw, 46px);}
+  .tvscale .dtitle .meta{font-size:clamp(11.5px, 1.6vw, 28px);}
+  .tvscale .roundpill{font-size:clamp(11px, 1.6vw, 28px); padding:5px 16px;}
   .dside.left .score{color:var(--red-l);}
   .dside.right .score{color:var(--blue-l);}
   .warnrow{display:flex; align-items:center; gap:7px; margin-top:10px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; justify-content:center;}
@@ -512,7 +524,7 @@ async function loadTorneo(){
     if (writeSeq !== seqAtStart || Date.now() - lastLocalWriteAt < LOCAL_WRITE_GRACE_MS) return;
     state.torneo = normalizeTorneo(data);
   }catch(e){ if (!state.torneo) state.torneo = emptyTorneo(); }
-  render();
+  renderOrTick();
 }
 async function writeTorneo(next){
   state.torneo = next;
@@ -607,7 +619,12 @@ function setupTimersForView(){
     pollTimer = setInterval(loadTorneo, POLL_MS);
   }
   if (['judge_vote','display_view','jefe_control'].includes(state.view)){
-    tickTimer = setInterval(()=>{ render(); checkTimeExpiry(); }, 300);
+    /* En Jefe de Mesa este tick solo debe refrescar el numero del cronometro,
+       NO reconstruir toda la pantalla: si se reconstruye 3 veces por segundo,
+       un toque en "+1 punto" puede caer justo cuando el boton viejo desaparece
+       y el nuevo todavia no existe, y el punto no se carga - obligando a tocar
+       dos veces. Actualizar solo el texto del cronometro evita ese choque. */
+    tickTimer = setInterval(()=>{ renderOrTick(); checkTimeExpiry(); }, 300);
     resolveTimer = setInterval(async ()=>{
       const seqAtStart = writeSeq;
       try{
@@ -961,6 +978,22 @@ function render(){
     const newScroll = document.querySelector('.scroll');
     if (newScroll) newScroll.scrollTop = scrollTop;
   }
+}
+/* Usada por el tick de 300ms y por cada sincronizacion con Firebase mientras
+   se esta en Jefe de Mesa: en vez de reconstruir toda la pantalla (lo que
+   podia "comerse" un toque en +1 punto si caia justo en ese instante),
+   solo refresca el numero del cronometro. Los puntos/faltas de esta pantalla
+   siempre se originan en este mismo dispositivo (el Jefe de Mesa es quien
+   los carga), asi que no hace falta reconstruir todo para verlos - ya se
+   actualizan solos apenas se tocan, porque esas acciones llaman a render()
+   directamente. */
+function renderOrTick(){
+  if (state.view === 'jefe_control'){
+    const cat = currentCat();
+    const t = cat && cat.live && document.querySelector('.jefecontrol .timer .t');
+    if (t){ t.textContent = fmtTime(getRemainingMs(cat.live)); return; }
+  }
+  render();
 }
 
 function renderHome(){
@@ -1411,7 +1444,7 @@ function renderDisplayLive(cat){
   const modeLabel = modalidadLabel(live.mode);
   const remaining = getRemainingMs(live);
   root.innerHTML = `
-  <div class="col">${belt()}
+  <div class="col tvscale">${belt()}
     <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div>
       <div class="meta">Academia Pukem Kwan</div>
       <div style="margin-top:6px;">${catBadges(cat)}</div>
