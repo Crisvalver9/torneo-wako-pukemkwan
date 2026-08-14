@@ -511,18 +511,6 @@ const root = document.getElementById('root');
 function saveSession(next){ try{ localStorage.setItem('wako_session', JSON.stringify(next)); }catch(e){} }
 function restoreSession(){
   try{
-    /* Si la URL trae ?view=...&catId=..., manda esto por sobre la sesion
-       guardada - es lo que usan los enlaces "Abrir pantalla publica en
-       pestaña nueva" (ver publicScreenUrl) en Mesa y Jefe de Mesa. */
-    const params = new URLSearchParams(location.search);
-    const qView = params.get('view');
-    if (qView){
-      state.view = qView;
-      const qCatId = params.get('catId');
-      if (qCatId) state.catId = qCatId;
-      state.loading = false;
-      return;
-    }
     const s = localStorage.getItem('wako_session');
     if (s){
       const p = JSON.parse(s);
@@ -532,18 +520,6 @@ function restoreSession(){
     }
   }catch(e){}
   state.loading = false;
-}
-/* URL directa a la Pantalla Publica de una categoria (para el enlace "abrir
-   en pestaña nueva" de Jefe de Mesa). Se probo abrirla automaticamente con
-   window.open() al iniciar un combate, pero en algunos navegadores esto
-   puede terminar navegando la MISMA pestaña de Jefe de Mesa en vez de abrir
-   una nueva (riesgo real: sacaria a la mesa del control en pleno combate).
-   Un <a target="_blank"> con un toque real del usuario es la unica forma
-   que el estandar web garantiza que SIEMPRE abre pestaña nueva. */
-function publicScreenUrl(catId){
-  const url = new URL(location.href);
-  url.search = '?view=display_view&catId=' + encodeURIComponent(catId);
-  return url.toString();
 }
 async function loadTorneo(){
   const seqAtStart = writeSeq;
@@ -1456,7 +1432,7 @@ function renderMatchCard(cat, m){
     const live = cat.live;
     body = `${matchupHtml(m.A, m.B, null, 'EN VIVO')}
       <div class="matchstatus">En vivo - asalto ${live?live.round:1}/${live?live.roundsTotal:1} - marcador ${live?live.scoreRed:0}-${live?live.scoreBlue:0}</div>
-      <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">Ir a control de mesa</button><a class="btn-sm" style="text-decoration:none; color:#fff; display:inline-flex; align-items:center;" href="${publicScreenUrl(cat.id)}" target="_blank" rel="noopener">Abrir pantalla pública &#8599;</a><button class="btn-sm warn" onclick="resetLiveScoresFromMesa('${cat.id}')">Reiniciar marcador</button></div>`;
+      <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">Ir a control de mesa</button><button class="btn-sm warn" onclick="resetLiveScoresFromMesa('${cat.id}')">Reiniciar marcador</button></div>`;
   } else if (m.status==='done'){
     body = `${matchupHtml(m.A, m.B, m.winnerSide, 'VS')}
       <div class="matchstatus">${escapeHtml(m.winner.name)} gana${m.disq?' (descalificación)':m.manual?' (decisión manual)':` ${m.scoreA}-${m.scoreB}`}</div>`;
@@ -1671,7 +1647,6 @@ function renderJefeControl(){
            </div>`}
         <button class="link" onclick="resetLiveScores()">Reiniciar marcador y advertencias</button>
         <button class="link" onclick="goTo('display_view')">Ver pantalla pública &rarr;</button>
-        <a class="link" style="text-decoration:none; color:var(--muted);" href="${publicScreenUrl(cat.id)}" target="_blank" rel="noopener">Abrir pantalla pública en pestaña nueva &#8599;</a>
       </div>
       <div style="height:20px;"></div>
     </div>
