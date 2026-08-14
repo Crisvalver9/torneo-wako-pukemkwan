@@ -423,7 +423,7 @@ function newLive(cat, matchId, fighterA, fighterB){
     perJudge:{1:{red:0,blue:0},2:{red:0,blue:0},3:{red:0,blue:0},4:{red:0,blue:0}},
     pendingVotes:{}, log:[],
     roundDuration: cat.roundDuration || 90, timerRunning:false, timerEndsAt:null,
-    timerRemainingMs: (cat.roundDuration||90)*1000,
+    timerRemainingMs: (cat.roundDuration||90)*1000, warned10:false,
   };
 }
 
@@ -511,6 +511,18 @@ const root = document.getElementById('root');
 function saveSession(next){ try{ localStorage.setItem('wako_session', JSON.stringify(next)); }catch(e){} }
 function restoreSession(){
   try{
+    /* Si la URL trae ?view=...&catId=..., manda esto por sobre la sesion
+       guardada - es lo que usan los enlaces "Abrir pantalla publica en
+       pestaña nueva" (ver publicScreenUrl) en Mesa y Jefe de Mesa. */
+    const params = new URLSearchParams(location.search);
+    const qView = params.get('view');
+    if (qView){
+      state.view = qView;
+      const qCatId = params.get('catId');
+      if (qCatId) state.catId = qCatId;
+      state.loading = false;
+      return;
+    }
     const s = localStorage.getItem('wako_session');
     if (s){
       const p = JSON.parse(s);
@@ -520,6 +532,18 @@ function restoreSession(){
     }
   }catch(e){}
   state.loading = false;
+}
+/* URL directa a la Pantalla Publica de una categoria (para el enlace "abrir
+   en pestaña nueva" de Jefe de Mesa). Se probo abrirla automaticamente con
+   window.open() al iniciar un combate, pero en algunos navegadores esto
+   puede terminar navegando la MISMA pestaña de Jefe de Mesa en vez de abrir
+   una nueva (riesgo real: sacaria a la mesa del control en pleno combate).
+   Un <a target="_blank"> con un toque real del usuario es la unica forma
+   que el estandar web garantiza que SIEMPRE abre pestaña nueva. */
+function publicScreenUrl(catId){
+  const url = new URL(location.href);
+  url.search = '?view=display_view&catId=' + encodeURIComponent(catId);
+  return url.toString();
 }
 async function loadTorneo(){
   const seqAtStart = writeSeq;
@@ -668,6 +692,24 @@ function goTo(view, extra){
 function goHome(){ state.catId=null; state.judgeId=null; goTo('home'); }
 
 /* ------------------------------- acciones mesa ------------------------------- */
+/* "Combate rapido": arma en un solo paso una categoria minima (2 esquinas
+   genericas, sin division/peso real) y la deja EN VIVO lista para anotar -
+   para cuando solo se quiere probar o entrenar sin pasar por inscribir
+   luchadores y cerrar llave cada vez. Reusa toda la logica ya probada
+   (categoria/llave/combate en vivo), no duplica nada nuevo. */
+function startQuickMatch(modalidad){
+  const id = uid('cat');
+  const cat = emptyCategory(id, {...newCatForm, modalidad, nombre:'Combate rápido', divisionEdad:newCatForm.divisionEdad||'S'});
+  cat.roster = [{name:'Rojo', club:'', pesado:false}, {name:'Azul', club:'', pesado:false}];
+  putCategory(id, cat);
+  closeBracket(id);
+  const c = state.torneo.categories[id];
+  const rounds = buildBracket(c);
+  const match = rounds.flatMap(r=>r.matches).find(m=>m.A && m.B && !m.winner);
+  if (!match) return;
+  startLive(id, match.id);
+  goTo('jefe_control', {catId:id});
+}
 function createCategory(){
   const id = uid('cat');
   const cat = emptyCategory(id, newCatForm);
@@ -863,16 +905,35 @@ function checkTimeExpiry(){
   if (state.view !== 'jefe_control') return;
   const cat = currentCat();
   if (!cat || !cat.live || !cat.live.timerRunning) return;
-  if (getRemainingMs(cat.live) > 0) return;
+  const remaining = getRemainingMs(cat.live);
+  /* Aviso a los 10 segundos (pedido explicito, igual que en el cronometro
+     suelto): se guarda un flag en el combate en vivo para que solo suene
+     una vez por asalto, no en cada tick de 300ms. */
+  if (remaining > 0 && remaining <= 10000){
+    if (!cat.live.warned10){
+      jefeUpdate(live => ({...live, warned10:true}));
+      playWarningBeep();
+    }
+    return;
+  }
+  if (remaining > 0) return;
   if (cat.live.round >= cat.live.roundsTotal){
+    playBell(); setTimeout(playBell, 550);
     autoFinalizeLive(cat.id);
   } else {
+    playBell();
     jefeUpdate(live => ({...live, timerRunning:false, timerRemainingMs:0}));
   }
 }
-function startTimer(){ jefeUpdate(live=>{ if (live.timerRunning) return live; const remaining=getRemainingMs(live); return {...live, timerRunning:true, timerEndsAt:Date.now()+remaining}; }); }
+function startTimer(){
+  const cat = currentCat();
+  if (cat && cat.live && !cat.live.timerRunning && getRemainingMs(cat.live) === cat.live.roundDuration*1000){
+    playBell();
+  }
+  jefeUpdate(live=>{ if (live.timerRunning) return live; const remaining=getRemainingMs(live); return {...live, timerRunning:true, timerEndsAt:Date.now()+remaining}; });
+}
 function pauseTimer(){ jefeUpdate(live=>{ if (!live.timerRunning) return live; const remaining=getRemainingMs(live); return {...live, timerRunning:false, timerRemainingMs:remaining}; }); }
-function resetTimer(){ jefeUpdate(live=>({...live, timerRunning:false, timerRemainingMs:live.roundDuration*1000, timerEndsAt:null})); }
+function resetTimer(){ jefeUpdate(live=>({...live, timerRunning:false, timerRemainingMs:live.roundDuration*1000, timerEndsAt:null, warned10:false})); }
 function adjustTime(deltaSec){
   jefeUpdate(live=>{
     if (live.timerRunning){
@@ -886,7 +947,7 @@ function adjustTime(deltaSec){
 function nextRound(){
   jefeUpdate(live=>{
     if (live.round >= live.roundsTotal) return live;
-    let next = {...live, round: live.round+1, timerRunning:false, timerEndsAt:null, timerRemainingMs: live.roundDuration*1000};
+    let next = {...live, round: live.round+1, timerRunning:false, timerEndsAt:null, timerRemainingMs: live.roundDuration*1000, warned10:false};
     next = pushLiveLog(next, `Fin del asalto ${live.round} - inicia asalto ${live.round+1} (marcador se mantiene)`);
     return next;
   });
@@ -1032,6 +1093,17 @@ function resetLiveScores(){
   jefeUpdate(live=>pushLiveLog({...live, scoreRed:0, scoreBlue:0, warningsRed:0, warningsBlue:0, suddenDeath:false, tiedFinal:false,
     perJudge:{1:{red:0,blue:0},2:{red:0,blue:0},3:{red:0,blue:0},4:{red:0,blue:0}}, pendingVotes:{}}, '- Marcador reiniciado -'));
 }
+/* Acceso rapido a "reiniciar marcador" desde Mesa, sin tener que entrar a
+   Jefe de Mesa primero. A pedido explicito del usuario, esta NO pide PIN
+   (a diferencia de entrar al rol completo de Jefe de Mesa) - solo queda
+   la confirmacion para evitar un toque accidental. */
+function resetLiveScoresFromMesa(catId){
+  const cat = state.torneo.categories[catId];
+  if (!cat || !cat.live) return;
+  if (!confirm('¿Reiniciar el marcador de este combate en vivo (puntos y faltas)? No se puede deshacer.')) return;
+  state.catId = catId;
+  resetLiveScores();
+}
 
 /* --------------------------------- utilidades UI --------------------------------- */
 function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -1090,7 +1162,7 @@ function render(){
     judge_selectCategory:renderJudgeSelectCategory, judge_selectSlot:renderJudgeSelectSlot, judge_vote:renderJudgeVote,
     jefe_selectCategory:renderJefeSelectCategory, jefe_control:renderJefeControl,
     display_selectCategory:renderDisplaySelectCategory, display_view:renderDisplayView,
-    stopwatch:renderStopwatch,
+    stopwatch:renderStopwatch, quick_start:renderQuickStart,
   };
   (fns[state.view]||renderHome)();
   if (scrollTop){
@@ -1131,6 +1203,25 @@ function renderHome(){
         <button class="btn btn-dark" onclick="goTo('judge_selectCategory')">Unirme como juez</button>
         <button class="btn btn-dark" onclick="goTo('display_selectCategory')">Pantalla pública</button>
         <button class="btn btn-dark" onclick="goTo('stopwatch')">Cronómetro</button>
+        <button class="btn btn-dark" onclick="goTo('quick_start')">Combate rápido</button>
+      </div>
+    </div>
+  ${belt()}</div>`;
+}
+function renderQuickStart(){
+  root.innerHTML = `
+  <div class="col">${belt()}
+    <div class="center">
+      <div>
+        <div class="eyebrow">Combate rápido</div>
+        <h1 style="font-size:22px;">¿Qué modalidad?</h1>
+        <p class="sub">Se crea un tablero con esquinas "Rojo" / "Azul" y arranca directo en Jefe de Mesa - sin tener que inscribir luchadores ni cerrar llave.</p>
+      </div>
+      <div class="stack">
+        <button class="btn btn-white" onclick="startQuickMatch('PF')">Point Fighting</button>
+        <button class="btn btn-white" onclick="startQuickMatch('LC')">Light Contact</button>
+        <button class="btn btn-white" onclick="startQuickMatch('KL')">Kick Light</button>
+        <button class="link" onclick="goHome()" style="margin-top:6px;">&larr; Volver</button>
       </div>
     </div>
   ${belt()}</div>`;
@@ -1365,7 +1456,7 @@ function renderMatchCard(cat, m){
     const live = cat.live;
     body = `${matchupHtml(m.A, m.B, null, 'EN VIVO')}
       <div class="matchstatus">En vivo - asalto ${live?live.round:1}/${live?live.roundsTotal:1} - marcador ${live?live.scoreRed:0}-${live?live.scoreBlue:0}</div>
-      <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">Ir a control de mesa</button></div>`;
+      <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">Ir a control de mesa</button><a class="btn-sm" style="text-decoration:none; color:#fff; display:inline-flex; align-items:center;" href="${publicScreenUrl(cat.id)}" target="_blank" rel="noopener">Abrir pantalla pública &#8599;</a><button class="btn-sm warn" onclick="resetLiveScoresFromMesa('${cat.id}')">Reiniciar marcador</button></div>`;
   } else if (m.status==='done'){
     body = `${matchupHtml(m.A, m.B, m.winnerSide, 'VS')}
       <div class="matchstatus">${escapeHtml(m.winner.name)} gana${m.disq?' (descalificación)':m.manual?' (decisión manual)':` ${m.scoreA}-${m.scoreB}`}</div>`;
@@ -1580,6 +1671,7 @@ function renderJefeControl(){
            </div>`}
         <button class="link" onclick="resetLiveScores()">Reiniciar marcador y advertencias</button>
         <button class="link" onclick="goTo('display_view')">Ver pantalla pública &rarr;</button>
+        <a class="link" style="text-decoration:none; color:var(--muted);" href="${publicScreenUrl(cat.id)}" target="_blank" rel="noopener">Abrir pantalla pública en pestaña nueva &#8599;</a>
       </div>
       <div style="height:20px;"></div>
     </div>
