@@ -1020,7 +1020,7 @@ function renderMesaHome(){
   const cats = Object.values((state.torneo && state.torneo.categories)||{}).sort((a,b)=>a.createdAt-b.createdAt);
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Categorías</h2><button class="btn-sm on" onclick="goTo('mesa_newCategory')">+ Nueva</button></div>
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><h2>Categorías</h2><button class="btn-sm on" onclick="goTo('mesa_newCategory')">+ Nueva</button></div>
     <div class="scroll">
       ${cats.length===0 ? `<div class="emptylist">Aún no hay categorías.<br>Crea la primera con "+ Nueva".</div>` :
         renderTatamiGroups(cats, cat=>`
@@ -1030,8 +1030,8 @@ function renderMesaHome(){
             <div class="meta" style="margin-top:6px;">Inscritos: ${cat.bracketClosed ? (cat.slots||[]).filter(Boolean).length + '/16 (llave cerrada)' : cat.roster.length + '/16'}</div>
           </div>`)}
       <div style="text-align:center; margin-top:8px; display:flex; flex-direction:column; gap:6px;">
-        ${cats.length>0 ? `<button class="link" onclick="descargarRespaldo()">descargar respaldo de categorías y resultados</button>` : ''}
-        <button class="link" onclick="configurarPin()">${state.torneo && state.torneo.pin ? 'cambiar PIN de protección' : 'proteger con PIN (opcional)'}</button>
+        ${cats.length>0 ? `<button class="link" onclick="descargarRespaldo()">Descargar respaldo de categorías y resultados</button>` : ''}
+        <button class="link" onclick="configurarPin()">${state.torneo && state.torneo.pin ? 'Cambiar PIN de protección' : 'Proteger con PIN (opcional)'}</button>
       </div>
       <div style="height:20px;"></div>
     </div>
@@ -1044,7 +1044,7 @@ function renderNewCategory(){
   root.innerHTML = `
   <div class="col">
     <div class="scroll form">
-      <button class="link" onclick="goTo('mesa_home')" style="margin-bottom:14px;">&larr; volver</button>
+      <button class="link" onclick="goTo('mesa_home')" style="margin-bottom:14px;">&larr; Volver</button>
       <h2 style="font-size:21px; font-weight:900; margin:0 0 4px;">Nueva categoría</h2>
       <div class="hint" style="margin-top:2px;">Divisiones y pesos según reglamento oficial WAKO (Tatami Rules, Cap. 2)</div>
 
@@ -1126,7 +1126,7 @@ function renderMesaCategory(){
   if (!cat) return renderCenterMsg('Categoría no encontrada.');
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goTo('mesa_home')">&larr; categorías</button><span></span><button class="link" onclick="deleteCategory('${cat.id}')" style="color:var(--red-l);">eliminar</button></div>
+    <div class="topbar"><button class="link" onclick="goTo('mesa_home')">&larr; Categorías</button><span></span><button class="link" onclick="deleteCategory('${cat.id}')" style="color:var(--red-l);">Eliminar</button></div>
     <div style="padding:0 16px 10px;">
       <div style="font-weight:900; font-size:18px;">${escapeHtml(cat.nombre)}</div>
       <div style="margin-top:6px;">${catBadges(cat)}</div>
@@ -1148,7 +1148,7 @@ function renderRosterSection(cat){
           <div class="fighterrow"><span class="n">${i+1}</span>
             <div class="info"><div>${escapeHtml(f.name)}</div>${f.club?`<div class="club">${escapeHtml(f.club)}</div>`:''}</div>
             <button class="btn-sm ${f.pesado?'on':''}" style="flex-shrink:0;" onclick="togglePesado('${cat.id}', ${i})">${f.pesado?'✓ pesado':'pesar'}</button>
-            <button class="link" onclick="removeFighter('${cat.id}', ${i})">quitar</button>
+            <button class="link" onclick="removeFighter('${cat.id}', ${i})">Quitar</button>
           </div>`).join('')}
     </div>
     ${cat.roster.length<16 ? `
@@ -1159,7 +1159,7 @@ function renderRosterSection(cat){
       <button class="btn btn-dark" onclick="addFighter('${cat.id}')">+ Agregar a la llave</button>
     </div>` : ''}
     <div style="padding:6px 16px 0; display:flex; gap:8px;">
-      <button class="btn-sm" onclick="shuffleRoster('${cat.id}')" ${cat.roster.length<2?'disabled style="opacity:.4;"':''}>mezclar orden</button>
+      <button class="btn-sm" onclick="shuffleRoster('${cat.id}')" ${cat.roster.length<2?'disabled style="opacity:.4;"':''}>Mezclar orden</button>
     </div>
     <div style="padding:14px 16px 0;">
       <button class="btn btn-green" onclick="closeBracket('${cat.id}')" ${cat.roster.length<2?'disabled style="opacity:.4;"':''}>Cerrar inscripciones y generar llave</button>
@@ -1187,15 +1187,15 @@ function renderMatchCard(cat, m){
   } else if (m.status==='pending'){
     body = `${matchupHtml(m.A, m.B, null, 'VS')}
       <div class="matchactions">
-        <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','A')">gana ${escapeHtml(m.A.name)}</button>
-        <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','B')">gana ${escapeHtml(m.B.name)}</button>
-        <button class="btn-sm on" onclick="startLive('${cat.id}','${m.id}')">anotar en vivo</button>
+        <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','A')">Gana ${escapeHtml(m.A.name)}</button>
+        <button class="btn-sm" onclick="declareWinner('${cat.id}','${m.id}','B')">Gana ${escapeHtml(m.B.name)}</button>
+        <button class="btn-sm on" onclick="startLive('${cat.id}','${m.id}')">Anotar en vivo</button>
       </div>`;
   } else if (m.status==='live'){
     const live = cat.live;
     body = `${matchupHtml(m.A, m.B, null, 'EN VIVO')}
-      <div class="matchstatus">en vivo - asalto ${live?live.round:1}/${live?live.roundsTotal:1} - marcador ${live?live.scoreRed:0}-${live?live.scoreBlue:0}</div>
-      <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">ir a control de mesa</button></div>`;
+      <div class="matchstatus">En vivo - asalto ${live?live.round:1}/${live?live.roundsTotal:1} - marcador ${live?live.scoreRed:0}-${live?live.scoreBlue:0}</div>
+      <div class="matchactions"><button class="btn-sm on" onclick="goTo('jefe_control',{catId:'${cat.id}'})">Ir a control de mesa</button></div>`;
   } else if (m.status==='done'){
     body = `${matchupHtml(m.A, m.B, m.winnerSide, 'VS')}
       <div class="matchstatus">${escapeHtml(m.winner.name)} gana${m.disq?' (descalificación)':m.manual?' (decisión manual)':` ${m.scoreA}-${m.scoreB}`}</div>`;
@@ -1208,8 +1208,8 @@ function renderBracketSection(cat){
   return `
     <div>
       <div style="padding:0 16px; margin-top:6px; display:flex; justify-content:space-between;">
-        <button class="link" onclick="reopenBracket('${cat.id}')">reabrir inscripciones</button>
-        ${podio.first ? `<button class="link" onclick="goTo('mesa_certificate',{catId:'${cat.id}'})">ver certificado de resultados &rarr;</button>` : ''}
+        <button class="link" onclick="reopenBracket('${cat.id}')">Reabrir inscripciones</button>
+        ${podio.first ? `<button class="link" onclick="goTo('mesa_certificate',{catId:'${cat.id}'})">Ver certificado de resultados &rarr;</button>` : ''}
       </div>
       ${rounds.map(r=>`
         <div class="roundblock">
@@ -1229,7 +1229,7 @@ function renderCertificado(){
     </div>` : '';
   root.innerHTML = `
   <div class="col">
-    <div class="topbar noprint"><button class="link" onclick="goTo('mesa_category',{catId:'${cat.id}'})">&larr; volver</button><span></span><button class="btn-sm on" onclick="window.print()">Imprimir / PDF</button></div>
+    <div class="topbar noprint"><button class="link" onclick="goTo('mesa_category',{catId:'${cat.id}'})">&larr; Volver</button><span></span><button class="btn-sm on" onclick="window.print()">Imprimir / PDF</button></div>
     <div class="scroll certificado">
       <div class="logo-wrap" style="margin:10px auto 6px;"><img src="${LOGO_SRC}" alt="" /></div>
       <div style="text-align:center;">
@@ -1254,7 +1254,7 @@ function renderJudgeSelectCategory(){
   const cats = Object.values((state.torneo && state.torneo.categories)||{}).filter(c=>c.live);
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Combates en vivo</h2><span></span></div>
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><h2>Combates en vivo</h2><span></span></div>
     <div class="scroll">
       ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo por el momento.<br>Pídele a mesa que inicie uno.</div>` :
         renderTatamiGroups(cats, c=>`
@@ -1278,7 +1278,7 @@ function renderJudgeSelectSlot(){
       <h2 style="margin-top:6px;">¿Qué juez eres?</h2>
     </div>
     <div class="judgegrid">${[1,2,3,4].slice(0,n).map(k=>`<button class="judgebtn" onclick="joinAsJudge(${k})">${k}</button>`).join('')}</div>
-    <button class="link" onclick="goTo('judge_selectCategory')">&larr; volver</button>
+    <button class="link" onclick="goTo('judge_selectCategory')">&larr; Volver</button>
   </div>`;
 }
 function renderJudgeVote(){
@@ -1295,7 +1295,7 @@ function renderJudgeVote(){
       <div class="eyebrow" style="margin-top:8px;">Point Fighting</div>
       <p class="hint" style="max-width:320px;">En esta modalidad señalas el punto en el tatami como indica el reglamento (mano/paleta). El Jefe de Mesa carga el punto en el sistema, aquí no hay botón de voto.</p>
       <span style="font-family:&#39;Barlow Condensed&#39;,monospace; font-weight:900; font-size:22px;">${fmtTime(remaining)}</span>
-      <div class="jbottom" style="position:static; margin-top:10px;"><button class="link" onclick="goHome()">salir</button><button class="link" onclick="goTo('display_view')">ver pantalla &rarr;</button></div>
+      <div class="jbottom" style="position:static; margin-top:10px;"><button class="link" onclick="goHome()">Salir</button><button class="link" onclick="goTo('display_view')">Ver pantalla &rarr;</button></div>
     </div>`;
     return;
   }
@@ -1310,14 +1310,14 @@ function renderJudgeVote(){
     <div class="jcall"></div>
 
     <button class="voteBtn vred ${state.flash==='red'?'flash':''}" onclick="vote('red')">
-      <span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="hint2" style="margin-top:0;">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="hint2">toca para anotar</span>
+      <span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="hint2" style="margin-top:0;">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="hint2">Toca para anotar</span>
     </button>
     <div class="divider"></div>
     <button class="voteBtn vblue ${state.flash==='blue'?'flash':''}" onclick="vote('blue')">
-      <span class="corner">Azul</span><span class="name">${escapeHtml(live.fighterB.name)}</span>${live.fighterB.club?`<span class="hint2" style="margin-top:0;">${escapeHtml(live.fighterB.club)}</span>`:''}<span class="hint2">toca para anotar</span>
+      <span class="corner">Azul</span><span class="name">${escapeHtml(live.fighterB.name)}</span>${live.fighterB.club?`<span class="hint2" style="margin-top:0;">${escapeHtml(live.fighterB.club)}</span>`:''}<span class="hint2">Toca para anotar</span>
     </button>
 
-    <div class="jbottom"><button class="link" onclick="goHome()">salir</button><button class="link" onclick="goTo('display_view')">ver pantalla &rarr;</button></div>
+    <div class="jbottom"><button class="link" onclick="goHome()">Salir</button><button class="link" onclick="goTo('display_view')">Ver pantalla &rarr;</button></div>
   </div>`;
 }
 
@@ -1325,9 +1325,9 @@ function renderJefeSelectCategory(){
   const cats = Object.values((state.torneo && state.torneo.categories)||{}).filter(c=>c.live);
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Jefe de mesa</h2><span></span></div>
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><h2>Jefe de mesa</h2><span></span></div>
     <div class="scroll">
-      ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo.<br>Ve a Mesa y toca "anotar en vivo" en un combate pendiente.</div>` :
+      ${cats.length===0 ? `<div class="emptylist">No hay combates en vivo.<br>Ve a Mesa y toca "Anotar en vivo" en un combate pendiente.</div>` :
         renderTatamiGroups(cats, c=>`
           <div class="picklistitem" onclick="goTo('jefe_control',{catId:'${c.id}'})">
             <div><div class="nm">${escapeHtml(c.live.fighterA.name)} vs ${escapeHtml(c.live.fighterB.name)}</div>
@@ -1342,7 +1342,7 @@ function renderWinnerAnnouncement(cat, isPublic){
   const w = cat.lastWinner;
   root.innerHTML = `
   <div class="col">${isPublic?belt():''}
-    <div class="${isPublic?'':'topbar'}">${isPublic?'':'<button class="link" onclick="goTo(\'jefe_selectCategory\')">&larr; combates</button><span></span><span></span>'}</div>
+    <div class="${isPublic?'':'topbar'}">${isPublic?'':'<button class="link" onclick="goTo(\'jefe_selectCategory\')">&larr; Combates</button><span></span><span></span>'}</div>
     <div class="center" style="gap:10px;">
       <div class="eyebrow">${escapeHtml(cat.nombre)}</div>
       <div class="winner-label">Gana</div>
@@ -1363,7 +1363,7 @@ function renderJefeControl(){
   const modeLabel = modalidadLabel(live.mode);
   root.innerHTML = `
   <div class="col jefecontrol">
-    <div class="topbar"><button class="link" onclick="goTo('jefe_selectCategory')">&larr; combates</button><h2 style="font-size:15px;">${escapeHtml(cat.nombre)}</h2><span></span></div>
+    <div class="topbar"><button class="link" onclick="goTo('jefe_selectCategory')">&larr; Combates</button><h2 style="font-size:15px;">${escapeHtml(cat.nombre)}</h2><span></span></div>
     <div class="scroll">
       <div class="jc-head">
         <span class="eyebrow">${modeLabel}</span>
@@ -1372,16 +1372,16 @@ function renderJefeControl(){
 
       <div class="timer"><div class="t">${fmtTime(remaining)}</div></div>
       <div class="timerbtns">
-        <button class="btn-sm ${live.timerRunning?'on':''}" onclick="startTimer()">iniciar</button>
-        <button class="btn-sm" onclick="pauseTimer()">pausar</button>
-        <button class="btn-sm" onclick="resetTimer()">reiniciar</button>
+        <button class="btn-sm ${live.timerRunning?'on':''}" onclick="startTimer()">Iniciar</button>
+        <button class="btn-sm" onclick="pauseTimer()">Pausar</button>
+        <button class="btn-sm" onclick="resetTimer()">Reiniciar</button>
       </div>
       <div class="timerbtns">
         <button class="btn-sm" onclick="adjustTime(-30)">-30s</button>
         <button class="btn-sm" onclick="adjustTime(-10)">-10s</button>
         <button class="btn-sm" onclick="adjustTime(10)">+10s</button>
         <button class="btn-sm" onclick="adjustTime(30)">+30s</button>
-        <button class="btn-sm on" onclick="nextRound()" ${live.round>=live.roundsTotal?'disabled style="opacity:.35;"':''}>siguiente asalto &rarr;</button>
+        <button class="btn-sm on" onclick="nextRound()" ${live.round>=live.roundsTotal?'disabled style="opacity:.35;"':''}>Siguiente asalto &rarr;</button>
       </div>
 
       <div class="jc-hint" style="text-align:center;">${live.mode==='PF' ? 'Jueces señalan en el tatami - anota aquí' : 'Cada juez anota desde su celular - esto es para corregir'}</div>
@@ -1389,12 +1389,12 @@ function renderJefeControl(){
         <div class="dside left"><span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="fclub">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="score">${live.scoreRed}</span>
           <div class="scorerow"><button class="btn-sm ${live.mode==='PF'?'on':''}" onclick="adjustScore('red',1)">+1 punto</button>${live.scoreRed>0?`<button class="link" onclick="adjustScore('red',-1)">-1</button>`:''}</div>
           <div class="warndots">${warnDots(live.warningsRed)}</div><div class="fclub">Faltas: ${live.warningsRed}/4</div>
-          <div class="warnrow"><button class="btn-sm warn" onclick="addFoul('red')">+ falta</button>${live.warningsRed>0?`<button class="link" onclick="undoFoul('red')">quitar</button>`:''}</div>
+          <div class="warnrow"><button class="btn-sm warn" onclick="addFoul('red')">+ falta</button>${live.warningsRed>0?`<button class="link" onclick="undoFoul('red')">Quitar</button>`:''}</div>
         </div>
         <div class="dside right"><span class="corner">Azul</span><span class="name">${escapeHtml(live.fighterB.name)}</span>${live.fighterB.club?`<span class="fclub">${escapeHtml(live.fighterB.club)}</span>`:''}<span class="score">${live.scoreBlue}</span>
           <div class="scorerow"><button class="btn-sm ${live.mode==='PF'?'on':''}" onclick="adjustScore('blue',1)">+1 punto</button>${live.scoreBlue>0?`<button class="link" onclick="adjustScore('blue',-1)">-1</button>`:''}</div>
           <div class="warndots">${warnDots(live.warningsBlue)}</div><div class="fclub">Faltas: ${live.warningsBlue}/4</div>
-          <div class="warnrow"><button class="btn-sm warn" onclick="addFoul('blue')">+ falta</button>${live.warningsBlue>0?`<button class="link" onclick="undoFoul('blue')">quitar</button>`:''}</div>
+          <div class="warnrow"><button class="btn-sm warn" onclick="addFoul('blue')">+ falta</button>${live.warningsBlue>0?`<button class="link" onclick="undoFoul('blue')">Quitar</button>`:''}</div>
         </div>
       </div>
       ${perJudgeBreakdown(live)}
@@ -1405,11 +1405,11 @@ function renderJefeControl(){
            <button class="btn btn-dark" onclick="finalizeLive('${cat.id}','B')">Gana ${escapeHtml(live.fighterB.name)} (Azul)</button>` :
           `<div class="warnrow" style="margin-top:0;">
              <span>Cerrar antes de tiempo:</span>
-             <button class="link" onclick="finalizeLive('${cat.id}','A')">gana Rojo</button>
-             <button class="link" onclick="finalizeLive('${cat.id}','B')">gana Azul</button>
+             <button class="link" onclick="finalizeLive('${cat.id}','A')">Gana Rojo</button>
+             <button class="link" onclick="finalizeLive('${cat.id}','B')">Gana Azul</button>
            </div>`}
-        <button class="link" onclick="resetLiveScores()">reiniciar marcador y advertencias</button>
-        <button class="link" onclick="goTo('display_view')">ver pantalla pública &rarr;</button>
+        <button class="link" onclick="resetLiveScores()">Reiniciar marcador y advertencias</button>
+        <button class="link" onclick="goTo('display_view')">Ver pantalla pública &rarr;</button>
       </div>
       <div style="height:20px;"></div>
     </div>
@@ -1420,7 +1420,7 @@ function renderDisplaySelectCategory(){
   const cats = Object.values((state.torneo && state.torneo.categories)||{}).sort((a,b)=>a.createdAt-b.createdAt);
   root.innerHTML = `
   <div class="col">
-    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><h2>Pantalla pública</h2><span></span></div>
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><h2>Pantalla pública</h2><span></span></div>
     <div class="scroll">
       ${cats.length===0 ? `<div class="emptylist">Aún no hay categorías creadas.</div>` :
         renderTatamiGroups(cats, c=>`
@@ -1461,7 +1461,7 @@ function renderDisplayLive(cat){
       </div>
     </div>
     ${perJudgeBreakdown(live)}
-    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoría</button><button class="link" onclick="goHome()">salir</button></div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; Otra categoría</button><button class="link" onclick="goHome()">Salir</button></div>
   ${belt()}</div>`;
 }
 function renderDisplayBracket(cat){
@@ -1474,7 +1474,7 @@ function renderDisplayBracket(cat){
         renderBracketTree(rounds)}
       <div style="height:20px;"></div>
     </div>
-    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; otra categoría</button><button class="link" onclick="goHome()">salir</button></div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; Otra categoría</button><button class="link" onclick="goHome()">Salir</button></div>
   ${belt()}</div>`;
 }
 /* Arbol de llave con lineas conectoras (Octavos->Cuartos->Semis->Final) para la
@@ -1510,7 +1510,7 @@ function renderBracketTree(rounds){
 function renderMatchCardDisplay(m){
   if (m.status==='empty') return '';
   if (m.status==='waiting') return `<div class="matchcard"><div class="matchstatus">Por definir</div></div>`;
-  if (m.status==='bye') return `<div class="matchcard">${matchupHtml(m.A, m.B, 'A', 'BYE')}<div class="matchstatus">avanza directo</div></div>`;
+  if (m.status==='bye') return `<div class="matchcard">${matchupHtml(m.A, m.B, 'A', 'BYE')}<div class="matchstatus">Avanza directo</div></div>`;
   if (m.status==='live') return `<div class="matchcard">${matchupHtml(m.A, m.B, null, 'EN VIVO')}</div>`;
   if (m.status==='pending') return `<div class="matchcard">${matchupHtml(m.A, m.B, null, 'VS')}</div>`;
   return `<div class="matchcard">${matchupHtml(m.A, m.B, m.winnerSide, 'VS')}</div>`;
@@ -1518,7 +1518,7 @@ function renderMatchCardDisplay(m){
 
 function renderCenterMsg(msg){
   root.innerHTML = `<div class="col">
-    <div class="topbar"><button class="link" onclick="goHome()">&larr; inicio</button><span></span><span></span></div>
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><span></span><span></span></div>
     <div class="center-msg"><div>${msg}<div style="margin-top:18px;"><button class="btn btn-dark" onclick="goHome()">Volver al inicio</button></div></div></div>
   </div>`;
 }
