@@ -184,6 +184,8 @@
   .tvscale .dtitle .name{font-size:clamp(17px, 2.8vw, 46px);}
   .tvscale .dtitle .meta{font-size:clamp(11.5px, 1.6vw, 28px);}
   .tvscale .roundpill{font-size:clamp(11px, 1.6vw, 28px); padding:5px 16px;}
+  .swphase{font-size:clamp(16px, 2.4vw, 34px); font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;}
+  .swdisplay .t{font-size:clamp(64px, 14vw, 260px); font-weight:900; font-variant-numeric:tabular-nums; font-family:'Barlow Condensed',monospace; line-height:1;}
   .dside.left .score{color:var(--red-l);}
   .dside.right .score{color:var(--blue-l);}
   .warnrow{display:flex; align-items:center; gap:7px; margin-top:10px; font-size:11.5px; color:var(--muted); flex-wrap:wrap; justify-content:center;}
@@ -486,6 +488,13 @@ const state = { view:'home', torneo:null, loading:true, catId:null, judgeId:null
 const dR = WAKO_DEFAULT_ROUNDS.YC;
 const newCatForm = { tatami:'Tatami 1', nombre:'', modalidad:'PF', divisionEdad:'', sexo:'M', peso:'', cinturon:'color', numJudges:3, numRounds:dR.n, roundDuration:dR.d };
 const fighterForm = { name:'', club:'' };
+/* Cronometro deportivo suelto (no forma parte del torneo, no se guarda en
+   Firebase - vive solo en este dispositivo, pensado para entrenamientos o
+   para mostrar en la TV independiente de una categoria/combate). */
+const timerCfg = { rounds:3, roundSec:120, restSec:60 };
+let timerState = { phase:'setup', round:1, running:false, remainingMs:0, endsAt:null, warned10:false };
+let stopwatchTimer=null;
+let audioCtx=null;
 let pollTimer=null, tickTimer=null, resolveTimer=null;
 let writeSeq = 0;
 /* Marca cuando este dispositivo escribio por ultima vez. loadTorneo() la usa
@@ -610,10 +619,15 @@ function clearTimers(){
   if (pollTimer) clearInterval(pollTimer);
   if (tickTimer) clearInterval(tickTimer);
   if (resolveTimer) clearInterval(resolveTimer);
-  pollTimer = tickTimer = resolveTimer = null;
+  if (stopwatchTimer) clearInterval(stopwatchTimer);
+  pollTimer = tickTimer = resolveTimer = stopwatchTimer = null;
 }
 function setupTimersForView(){
   clearTimers();
+  if (state.view === 'stopwatch'){
+    stopwatchTimer = setInterval(stopwatchTick, 250);
+    return;
+  }
   if (state.view !== 'home' && state.view !== 'mesa_newCategory'){
     loadTorneo();
     pollTimer = setInterval(loadTorneo, POLL_MS);
@@ -877,6 +891,110 @@ function nextRound(){
     return next;
   });
 }
+/* ---------------------------- cronometro suelto ---------------------------- */
+function ensureAudio(){
+  try{
+    if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if (audioCtx.state==='suspended') audioCtx.resume();
+  }catch(e){}
+}
+function playTone(freq, dur, delay, vol){
+  if (!audioCtx) return;
+  try{
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const t = audioCtx.currentTime + (delay||0);
+    gain.gain.setValueAtTime(vol||0.35, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+dur);
+    osc.start(t);
+    osc.stop(t+dur+0.03);
+  }catch(e){}
+}
+/* Campana de asalto: suena al empezar y al terminar cada asalto (como una
+   campana de boxeo real - la misma campana marca inicio y fin). */
+function playBell(){ ensureAudio(); playTone(587,0.15,0,0.4); playTone(587,0.6,0.05,0.35); }
+/* Timbre extra que se suma a la campana SOLO al entrar a descanso, para que
+   se distinga por oido de un simple fin/inicio de asalto - el usuario pidio
+   explicitamente poder diferenciar "termino el asalto" de "ahora es descanso". */
+function playRestChime(){ ensureAudio(); playTone(784,0.15,0,0.3); playTone(988,0.25,0.18,0.3); }
+/* Aviso corto cuando quedan 10 segundos de un asalto (pedido explicito). */
+function playWarningBeep(){ ensureAudio(); playTone(1046,0.12,0,0.3); }
+function getStopwatchRemaining(){
+  if (timerState.phase==='setup') return timerCfg.roundSec*1000;
+  if (timerState.phase==='done') return 0;
+  if (timerState.running) return Math.max(0, timerState.endsAt - Date.now());
+  return timerState.remainingMs;
+}
+function stopwatchTick(){
+  const t = timerState;
+  if (t.phase==='setup' || t.phase==='done' || !t.running) return;
+  const remaining = Math.max(0, t.endsAt - Date.now());
+  if (t.phase==='round' && !t.warned10 && remaining<=10000 && remaining>0){
+    t.warned10 = true;
+    playWarningBeep();
+  }
+  if (remaining > 0){
+    const el = document.querySelector('.swdisplay .t');
+    if (el) el.textContent = fmtTime(remaining);
+    return;
+  }
+  advanceStopwatchPhase();
+}
+function advanceStopwatchPhase(){
+  const t = timerState;
+  if (t.phase==='round'){
+    if (t.round >= timerCfg.rounds){
+      timerState = {...t, phase:'done', running:false, remainingMs:0, endsAt:null};
+      playBell(); setTimeout(playBell, 550);
+    } else {
+      timerState = {...t, phase:'rest', remainingMs:timerCfg.restSec*1000, endsAt:Date.now()+timerCfg.restSec*1000, warned10:false};
+      playBell(); setTimeout(playRestChime, 450);
+    }
+  } else if (t.phase==='rest'){
+    timerState = {...t, phase:'round', round:t.round+1, remainingMs:timerCfg.roundSec*1000, endsAt:Date.now()+timerCfg.roundSec*1000, warned10:false};
+    playBell();
+  }
+  render();
+}
+function startStopwatch(){
+  ensureAudio();
+  const t = timerState;
+  if (t.phase==='setup' || t.phase==='done'){
+    timerState = {phase:'round', round:1, running:true, remainingMs:timerCfg.roundSec*1000, endsAt:Date.now()+timerCfg.roundSec*1000, warned10:false};
+    playBell();
+  } else if (!t.running){
+    timerState = {...t, running:true, endsAt:Date.now()+t.remainingMs};
+  }
+  render();
+}
+function pauseStopwatch(){
+  const t = timerState;
+  if (!t.running) return;
+  timerState = {...t, running:false, remainingMs:Math.max(0, t.endsAt-Date.now())};
+  render();
+}
+function resetStopwatch(){
+  timerState = {phase:'setup', round:1, running:false, remainingMs:0, endsAt:null, warned10:false};
+  render();
+}
+function skipStopwatchPhase(){
+  if (timerState.phase==='setup' || timerState.phase==='done') return;
+  advanceStopwatchPhase();
+}
+function adjustStopwatchTime(deltaSec){
+  const t = timerState;
+  if (t.phase==='setup' || t.phase==='done') return;
+  if (t.running){
+    timerState = {...t, endsAt: Math.max(Date.now(), t.endsAt + deltaSec*1000)};
+  } else {
+    timerState = {...t, remainingMs: Math.max(0, t.remainingMs + deltaSec*1000)};
+  }
+  render();
+}
 function addFoul(color){
   const cat = currentCat(); if (!cat || !cat.live) return;
   const field = color==='red' ? 'warningsRed' : 'warningsBlue';
@@ -972,6 +1090,7 @@ function render(){
     judge_selectCategory:renderJudgeSelectCategory, judge_selectSlot:renderJudgeSelectSlot, judge_vote:renderJudgeVote,
     jefe_selectCategory:renderJefeSelectCategory, jefe_control:renderJefeControl,
     display_selectCategory:renderDisplaySelectCategory, display_view:renderDisplayView,
+    stopwatch:renderStopwatch,
   };
   (fns[state.view]||renderHome)();
   if (scrollTop){
@@ -1011,9 +1130,60 @@ function renderHome(){
         <button class="btn btn-amber" onclick="goTo('jefe_selectCategory')">Jefe de mesa (control en vivo)</button>
         <button class="btn btn-dark" onclick="goTo('judge_selectCategory')">Unirme como juez</button>
         <button class="btn btn-dark" onclick="goTo('display_selectCategory')">Pantalla pública</button>
+        <button class="btn btn-dark" onclick="goTo('stopwatch')">Cronómetro</button>
       </div>
     </div>
   ${belt()}</div>`;
+}
+function renderStopwatch(){
+  root.innerHTML = `
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><h2>Cronómetro</h2><span></span></div>
+    <div class="scroll" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:16px; text-align:center;">
+      ${timerState.phase==='setup' ? renderStopwatchSetup() : renderStopwatchActive()}
+    </div>
+  </div>`;
+}
+function renderStopwatchSetup(){
+  return `
+    <div class="stack" style="max-width:380px;">
+      <label>Cantidad de asaltos</label>
+      <div class="grid3">
+        ${[1,2,3,5,10].map(n=>`<button class="opt ${timerCfg.rounds===n?'active':''}" onclick="timerCfg.rounds=${n}; render()">${n}</button>`).join('')}
+      </div>
+      <label style="margin-top:10px;">Duración de cada asalto</label>
+      <div class="grid3">
+        ${[60,90,120,180,300].map(s=>`<button class="opt ${timerCfg.roundSec===s?'active':''}" onclick="timerCfg.roundSec=${s}; render()">${fmtTime(s*1000)}</button>`).join('')}
+      </div>
+      <label style="margin-top:10px;">Descanso entre asaltos</label>
+      <div class="grid3">
+        ${[15,30,45,60,90].map(s=>`<button class="opt ${timerCfg.restSec===s?'active':''}" onclick="timerCfg.restSec=${s}; render()">${fmtTime(s*1000)}</button>`).join('')}
+      </div>
+      <button class="btn btn-white" style="margin-top:18px;" onclick="startStopwatch()">Iniciar</button>
+      <div class="hint" style="margin-top:6px;">Suena una campana al empezar/terminar cada asalto, un timbre distinto al entrar a descanso, y un aviso corto cuando quedan 10 segundos.</div>
+    </div>`;
+}
+function renderStopwatchActive(){
+  const t = timerState;
+  const remaining = getStopwatchRemaining();
+  const phaseLabel = t.phase==='round' ? `Asalto ${t.round}/${timerCfg.rounds}` : t.phase==='rest' ? 'Descanso' : 'Terminado';
+  const phaseColor = t.phase==='rest' ? 'var(--amber-pale)' : (t.phase==='done' ? 'var(--green)' : '#fff');
+  return `
+    <div class="swphase" style="color:${phaseColor};">${phaseLabel}</div>
+    <div class="swdisplay"><div class="t">${fmtTime(remaining)}</div></div>
+    <div class="timerbtns" style="margin-top:14px;">
+      ${t.phase!=='done' ? (t.running ?
+        `<button class="btn-sm on" onclick="pauseStopwatch()">Pausar</button>` :
+        `<button class="btn-sm on" onclick="startStopwatch()">Reanudar</button>`) : ''}
+      <button class="btn-sm" onclick="resetStopwatch()">Reiniciar</button>
+      ${t.phase!=='done' ? `<button class="btn-sm" onclick="skipStopwatchPhase()">Saltar fase &rarr;</button>` : ''}
+    </div>
+    ${t.phase!=='done' ? `
+    <div class="timerbtns" style="margin-top:8px;">
+      <button class="btn-sm" onclick="adjustStopwatchTime(-10)">-10s</button>
+      <button class="btn-sm" onclick="adjustStopwatchTime(10)">+10s</button>
+    </div>` : `<div class="hint" style="margin-top:12px;">Se cumplieron los ${timerCfg.rounds} asalto(s).</div>`}
+  `;
 }
 
 function renderMesaHome(){
