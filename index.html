@@ -1166,20 +1166,22 @@ function renderOrTick(){
 function renderHome(){
   root.innerHTML = `
   <div class="col">${belt()}
-    <div class="center">
-      <div>
-        <div class="logo-wrap"><img src="${LOGO_SRC}" alt="Academia Pukem Kwan" /></div>
-        <div class="eyebrow">Academia Pukem Kwan &middot; Castro</div>
-        <h1>TORNEO WAKO</h1>
-        <p class="sub">Llaves &middot; Point Fighting &middot; Light Contact</p>
-      </div>
-      <div class="stack">
-        <button class="btn btn-white" onclick="goTo('mesa_home')">Mesa (categorías y llaves)</button>
-        <button class="btn btn-amber" onclick="goTo('jefe_selectCategory')">Jefe de mesa (control en vivo)</button>
-        <button class="btn btn-dark" onclick="goTo('judge_selectCategory')">Unirme como juez</button>
-        <button class="btn btn-dark" onclick="goTo('display_selectCategory')">Pantalla pública</button>
-        <button class="btn btn-dark" onclick="goTo('stopwatch')">Cronómetro</button>
-        <button class="btn btn-dark" onclick="goTo('quick_start')">Combate rápido</button>
+    <div class="scroll">
+      <div class="center" style="min-height:100%; flex:none;">
+        <div>
+          <div class="logo-wrap"><img src="${LOGO_SRC}" alt="Academia Pukem Kwan" /></div>
+          <div class="eyebrow">Academia Pukem Kwan &middot; Castro</div>
+          <h1>TORNEO WAKO</h1>
+          <p class="sub">Llaves &middot; Point Fighting &middot; Light Contact</p>
+        </div>
+        <div class="stack">
+          <button class="btn btn-white" onclick="goTo('mesa_home')">Mesa (categorías y llaves)</button>
+          <button class="btn btn-amber" onclick="goTo('jefe_selectCategory')">Jefe de mesa (control en vivo)</button>
+          <button class="btn btn-dark" onclick="goTo('judge_selectCategory')">Unirme como juez</button>
+          <button class="btn btn-dark" onclick="goTo('display_selectCategory')">Pantalla pública</button>
+          <button class="btn btn-dark" onclick="goTo('stopwatch')">Cronómetro</button>
+          <button class="btn btn-dark" onclick="goTo('quick_start')">Combate rápido</button>
+        </div>
       </div>
     </div>
   ${belt()}</div>`;
@@ -1187,17 +1189,19 @@ function renderHome(){
 function renderQuickStart(){
   root.innerHTML = `
   <div class="col">${belt()}
-    <div class="center">
-      <div>
-        <div class="eyebrow">Combate rápido</div>
-        <h1 style="font-size:22px;">¿Qué modalidad?</h1>
-        <p class="sub">Se crea un tablero con esquinas "Rojo" / "Azul" y arranca directo en Jefe de Mesa - sin tener que inscribir luchadores ni cerrar llave.</p>
-      </div>
-      <div class="stack">
-        <button class="btn btn-white" onclick="startQuickMatch('PF')">Point Fighting</button>
-        <button class="btn btn-white" onclick="startQuickMatch('LC')">Light Contact</button>
-        <button class="btn btn-white" onclick="startQuickMatch('KL')">Kick Light</button>
-        <button class="link" onclick="goHome()" style="margin-top:6px;">&larr; Volver</button>
+    <div class="scroll">
+      <div class="center" style="min-height:100%; flex:none;">
+        <div>
+          <div class="eyebrow">Combate rápido</div>
+          <h1 style="font-size:22px;">¿Qué modalidad?</h1>
+          <p class="sub">Se crea un tablero con esquinas "Rojo" / "Azul" y arranca directo en Jefe de Mesa - sin tener que inscribir luchadores ni cerrar llave.</p>
+        </div>
+        <div class="stack">
+          <button class="btn btn-white" onclick="startQuickMatch('PF')">Point Fighting</button>
+          <button class="btn btn-white" onclick="startQuickMatch('LC')">Light Contact</button>
+          <button class="btn btn-white" onclick="startQuickMatch('KL')">Kick Light</button>
+          <button class="link" onclick="goHome()" style="margin-top:6px;">&larr; Volver</button>
+        </div>
       </div>
     </div>
   ${belt()}</div>`;
@@ -1206,8 +1210,10 @@ function renderStopwatch(){
   root.innerHTML = `
   <div class="col">
     <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><h2>Cronómetro</h2><span></span></div>
-    <div class="scroll" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:16px; text-align:center;">
-      ${timerState.phase==='setup' ? renderStopwatchSetup() : renderStopwatchActive()}
+    <div class="scroll">
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100%; padding:16px; text-align:center;">
+        ${timerState.phase==='setup' ? renderStopwatchSetup() : renderStopwatchActive()}
+      </div>
     </div>
   </div>`;
 }
