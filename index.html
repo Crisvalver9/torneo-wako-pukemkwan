@@ -476,6 +476,15 @@ const newCatForm = { tatami:'Tatami 1', nombre:'', modalidad:'PF', divisionEdad:
 const fighterForm = { name:'', club:'' };
 let pollTimer=null, tickTimer=null, resolveTimer=null;
 let writeSeq = 0;
+/* Marca cuando este dispositivo escribio por ultima vez. loadTorneo() la usa
+   para no confiar en una lectura completa de /torneo.json que llegue muy
+   pegada a una escritura propia: Firebase a veces tarda una fraccion de
+   segundo en que una lectura del documento padre refleje una escritura que
+   se acaba de hacer en un nodo hijo (PUT en /torneo/categories/{id}.json),
+   y sin este margen esa lectura vieja pisaba en silencio un punto recien
+   cargado si el Jefe de Mesa tocaba +1 dos veces rapido. */
+let lastLocalWriteAt = 0;
+const LOCAL_WRITE_GRACE_MS = 1500;
 const root = document.getElementById('root');
 
 function saveSession(next){ try{ localStorage.setItem('wako_session', JSON.stringify(next)); }catch(e){} }
@@ -500,7 +509,7 @@ async function loadTorneo(){
        los datos que llegaron son mas viejos que lo que ya tenemos en pantalla
        (ej. un combate que se acaba de cerrar) - se descartan para no "revivir"
        un combate ya terminado ni pisar la ultima accion del usuario. */
-    if (writeSeq !== seqAtStart) return;
+    if (writeSeq !== seqAtStart || Date.now() - lastLocalWriteAt < LOCAL_WRITE_GRACE_MS) return;
     state.torneo = normalizeTorneo(data);
   }catch(e){ if (!state.torneo) state.torneo = emptyTorneo(); }
   render();
@@ -508,6 +517,7 @@ async function loadTorneo(){
 async function writeTorneo(next){
   state.torneo = next;
   writeSeq++;
+  lastLocalWriteAt = Date.now();
   render();
   try{ await fetch(TORNEO_PATH, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(next)}); }catch(e){}
 }
@@ -520,6 +530,7 @@ async function writeTorneo(next){
 async function putCategory(catId, catData){
   state.torneo = {...state.torneo, categories:{...state.torneo.categories, [catId]: catData}};
   writeSeq++;
+  lastLocalWriteAt = Date.now();
   render();
   try{ await fetch(FIREBASE_URL + '/torneo/categories/' + catId + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(catData)}); }catch(e){}
 }
@@ -527,6 +538,7 @@ async function deleteCategoryRemote(catId){
   const cats = {...state.torneo.categories}; delete cats[catId];
   state.torneo = {...state.torneo, categories:cats};
   writeSeq++;
+  lastLocalWriteAt = Date.now();
   render();
   try{ await fetch(FIREBASE_URL + '/torneo/categories/' + catId + '.json', {method:'DELETE'}); }catch(e){}
 }
@@ -538,6 +550,7 @@ async function deleteCategoryRemote(catId){
 async function putPin(pin){
   state.torneo = {...state.torneo, pin};
   writeSeq++;
+  lastLocalWriteAt = Date.now();
   render();
   try{ await fetch(FIREBASE_URL + '/torneo/pin.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(pin)}); }catch(e){}
 }
