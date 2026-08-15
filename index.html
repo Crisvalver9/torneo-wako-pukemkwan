@@ -191,6 +191,19 @@
   .dscores{flex:1; display:grid; grid-template-columns:1fr 1fr; align-items:center; min-height:0;}
   .dside{display:flex; flex-direction:column; align-items:center;}
   .dside.left{border-right:1px solid var(--line);}
+  /* Version "grafica de TV" del marcador, solo en Pantalla Publica (.tvscale):
+     paneles con tinte de color por esquina, badge "VS" al centro y tarjeta
+     para el cronometro, en vez del texto plano sin fondo que tenia antes. */
+  .tvscale .dscores{grid-template-columns:1fr auto 1fr; gap:10px; padding:0 14px 14px;}
+  .tvscale .dside{border-radius:22px; padding:18px 12px; position:relative;}
+  .tvscale .dside.left{background:linear-gradient(165deg, rgba(239,68,68,.16) 0%, rgba(239,68,68,.02) 65%); border:1px solid rgba(239,68,68,.3); border-right:1px solid rgba(239,68,68,.3);}
+  .tvscale .dside.right{background:linear-gradient(195deg, rgba(59,130,246,.16) 0%, rgba(59,130,246,.02) 65%); border:1px solid rgba(59,130,246,.3);}
+  .tvscale .vsbadge{align-self:center; width:34px; height:34px; border-radius:50%; background:linear-gradient(180deg, var(--panel3) 0%, var(--panel) 100%);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--muted); box-shadow:var(--shadow-sm); flex-shrink:0;}
+  .tvscale .timer{align-self:center; background:linear-gradient(180deg, var(--panel3) 0%, var(--panel) 100%); border:1px solid var(--line);
+    border-radius:20px; padding:6px 34px; box-shadow:var(--shadow-md);}
+  .tvscale .dtitle{position:relative; padding-bottom:16px;}
+  .tvscale .dtitle::after{content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:64px; height:3px; border-radius:99px; background:linear-gradient(90deg, transparent, var(--gold), transparent);}
   .dside .corner{font-size:10.5px; color:var(--muted2); letter-spacing:.15em; text-transform:uppercase;}
   .dside .name{font-weight:800; font-size:15px; margin-top:2px; text-align:center; padding:0 8px;}
   .dside.left .name{color:var(--red-l);}
@@ -1747,6 +1760,7 @@ function renderDisplayLive(cat){
       <div class="dside left"><span class="corner">Rojo</span><span class="name">${escapeHtml(live.fighterA.name)}</span>${live.fighterA.club?`<span class="fclub">${escapeHtml(live.fighterA.club)}</span>`:''}<span class="score">${live.scoreRed}</span>
         <div class="warndots">${warnDots(live.warningsRed)}</div><div class="fclub">Faltas: ${live.warningsRed}/4</div>
       </div>
+      <div class="vsbadge">VS</div>
       <div class="dside right"><span class="corner">Azul</span><span class="name">${escapeHtml(live.fighterB.name)}</span>${live.fighterB.club?`<span class="fclub">${escapeHtml(live.fighterB.club)}</span>`:''}<span class="score">${live.scoreBlue}</span>
         <div class="warndots">${warnDots(live.warningsBlue)}</div><div class="fclub">Faltas: ${live.warningsBlue}/4</div>
       </div>
