@@ -206,6 +206,10 @@
   .tvscale .dtitle::after{content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:64px; height:3px; border-radius:99px; background:linear-gradient(90deg, transparent, var(--gold), transparent);}
   .tvsubtitle{font-size:11.5px; color:var(--muted); font-weight:600; letter-spacing:.02em; margin-top:5px;}
   .tvsub-dot{color:var(--gold); margin:0 1px;}
+  .fsbtn{position:fixed; top:max(10px, env(safe-area-inset-top)); right:10px; width:36px; height:36px; border-radius:10px;
+    background:rgba(255,255,255,.07); border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    color:var(--muted); z-index:20; backdrop-filter:blur(4px); transition:transform .1s, background .15s;}
+  .fsbtn:active{transform:scale(.9); background:rgba(255,255,255,.14);}
   .tvscale .tvsubtitle{font-size:clamp(11.5px, 1.7vw, 26px);}
   .dside .corner{font-size:10.5px; color:var(--muted2); letter-spacing:.15em; text-transform:uppercase;}
   .dside .name{font-weight:800; font-size:15px; margin-top:2px; text-align:center; padding:0 8px;}
@@ -1228,6 +1232,16 @@ const HOME_ICONS = {
    paso" (ej. jefe_control -> Combates), pedido explicito del usuario porque
    volver al menu principal no era intuitivo desde algunas pantallas. */
 const HOME_BTN = `<button class="link" onclick="goHome()" title="Ir al inicio" style="display:flex; align-items:center; justify-self:end;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></button>`;
+/* Boton de pantalla completa para los marcadores (Pantalla Publica y Jefe de
+   Mesa) - pedido explicito para no tener que usar F11 a mano en la TV. */
+function toggleFullscreen(){
+  try{
+    if (!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
+    else { document.exitFullscreen().catch(()=>{}); }
+  }catch(e){}
+}
+const FS_ICON_EXPAND = `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>`;
+const FS_BTN = `<button class="fsbtn" onclick="toggleFullscreen()" title="Pantalla completa">${FS_ICON_EXPAND}</button>`;
 function menuRow(cls, icon, onclick, title, sub){
   return `<button class="menu-row ${cls}" onclick="${onclick}">
     <span class="menu-icon">${icon}</span>
@@ -1686,7 +1700,7 @@ function renderJefeControl(){
   const modeLabel = modalidadLabel(live.mode);
   root.innerHTML = `
   <div class="col jefecontrol">
-    <div class="topbar"><button class="link" onclick="goTo('jefe_selectCategory')">&larr; Combates</button><h2 style="font-size:15px;">${escapeHtml(cat.nombre)}</h2>${HOME_BTN}</div>
+    <div class="topbar"><button class="link" onclick="goTo('jefe_selectCategory')">&larr; Combates</button><h2 style="font-size:15px;">${escapeHtml(cat.nombre)}</h2><span style="display:flex; gap:10px; align-items:center; justify-self:end;"><button class="link" onclick="toggleFullscreen()" title="Pantalla completa" style="display:flex; align-items:center;">${FS_ICON_EXPAND}</button>${HOME_BTN}</span></div>
     <div class="scroll">
       <div class="jc-head">
         <span class="eyebrow">${modeLabel}</span>
@@ -1768,7 +1782,7 @@ function renderDisplayLive(cat){
   const modeLabel = modalidadLabel(live.mode);
   const remaining = getRemainingMs(live);
   root.innerHTML = `
-  <div class="col tvscale">${belt()}
+  <div class="col tvscale">${FS_BTN}${belt()}
     <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div>
       <div class="meta">Academia Pukem Kwan</div>
       <div class="tvsubtitle">${tvSubtitle(cat)}</div>
@@ -1792,7 +1806,7 @@ function renderDisplayLive(cat){
 function renderDisplayBracket(cat){
   const rounds = buildBracket(cat);
   root.innerHTML = `
-  <div class="col tvscale">${belt()}
+  <div class="col tvscale">${FS_BTN}${belt()}
     <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div><div class="meta">Academia Pukem Kwan</div><div class="tvsubtitle">${tvSubtitle(cat)}</div></div>
     <div class="scroll">
       ${!cat.bracketClosed ? `<div class="emptylist">Inscripciones abiertas - la llave aún no se ha generado.<br>${cat.roster.length} inscrito(s) hasta ahora.</div>` :
