@@ -204,6 +204,9 @@
     border-radius:20px; padding:6px 34px; box-shadow:var(--shadow-md);}
   .tvscale .dtitle{position:relative; padding-bottom:16px;}
   .tvscale .dtitle::after{content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:64px; height:3px; border-radius:99px; background:linear-gradient(90deg, transparent, var(--gold), transparent);}
+  .tvsubtitle{font-size:11.5px; color:var(--muted); font-weight:600; letter-spacing:.02em; margin-top:5px;}
+  .tvsub-dot{color:var(--gold); margin:0 1px;}
+  .tvscale .tvsubtitle{font-size:clamp(11.5px, 1.7vw, 26px);}
   .dside .corner{font-size:10.5px; color:var(--muted2); letter-spacing:.15em; text-transform:uppercase;}
   .dside .name{font-weight:800; font-size:15px; margin-top:2px; text-align:center; padding:0 8px;}
   .dside.left .name{color:var(--red-l);}
@@ -220,6 +223,9 @@
   .tvscale .dside .score{font-size:clamp(52px, 10vw, 220px);}
   .tvscale .dtitle .name{font-size:clamp(17px, 2.8vw, 46px);}
   .tvscale .dtitle .meta{font-size:clamp(11.5px, 1.6vw, 28px);}
+  .tvscale .dside .fclub{font-size:clamp(11px, 1.5vw, 24px);}
+  .tvscale .warndot{width:clamp(8px, 1vw, 16px); height:clamp(8px, 1vw, 16px);}
+  .tvscale .warndots{gap:clamp(3px, .5vw, 8px); margin-top:clamp(4px, .8vw, 12px);}
   .tvscale .roundpill{font-size:clamp(11px, 1.6vw, 28px); padding:5px 16px;}
   .swphase{font-size:clamp(16px, 2.4vw, 34px); font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;}
   .swdisplay .t{font-size:clamp(64px, 14vw, 260px); font-weight:900; font-variant-numeric:tabular-nums; font-family:'Barlow Condensed',monospace; line-height:1;}
@@ -1124,6 +1130,16 @@ function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, fu
    LC/KL = combate continuo sin pausas, cada juez suma su propio marcador. */
 const MODALIDAD_LABELS = { PF:'Point Fighting', LC:'Light Contact', KL:'Kick Light' };
 function modalidadLabel(m){ return MODALIDAD_LABELS[m] || m; }
+/* Version simplificada de los datos de la categoria SOLO para la Pantalla
+   Publica: en vez de la fila de 7 badges chicos que usa Mesa (utiles para
+   quien administra, pero se ven amontonados y "genericos" en una TV frente
+   al publico), una sola linea de texto mas grande y prolija con lo que
+   realmente le importa a quien mira: tatami, modalidad, division, sexo. */
+function tvSubtitle(cat){
+  const parts = [cat.tatami||'Tatami 1', modalidadLabel(cat.modalidad), divisionLabel(cat.divisionEdad), cat.sexo==='F'?'Femenino':'Masculino'];
+  if (cat.peso) parts.push(cat.peso);
+  return parts.map(p=>escapeHtml(p)).join(' <span class="tvsub-dot">&middot;</span> ');
+}
 function catBadges(cat){
   return `<span class="badge tatami">${escapeHtml(cat.tatami||'Tatami 1')}</span>`+
     `<span class="badge ${cat.modalidad==='PF'?'pf':'lc'}">${modalidadLabel(cat.modalidad)}</span>`+
@@ -1208,6 +1224,10 @@ const HOME_ICONS = {
   clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6M12 2v3"/></svg>`,
   bolt: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2 3 14h7l-1 8 11-14h-8l1-6z"/></svg>`,
 };
+/* Boton de "volver al inicio" para topbars que solo tenian un "volver un
+   paso" (ej. jefe_control -> Combates), pedido explicito del usuario porque
+   volver al menu principal no era intuitivo desde algunas pantallas. */
+const HOME_BTN = `<button class="link" onclick="goHome()" title="Ir al inicio" style="display:flex; align-items:center; justify-self:end;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></button>`;
 function menuRow(cls, icon, onclick, title, sub){
   return `<button class="menu-row ${cls}" onclick="${onclick}">
     <span class="menu-icon">${icon}</span>
@@ -1219,7 +1239,7 @@ function renderHome(){
   root.innerHTML = `
   <div class="col">${belt()}
     <div class="scroll">
-      <div class="center" style="min-height:100%; flex:none;">
+      <div class="center" style="min-height:100%; flex:none; padding-top:28px; padding-bottom:32px;">
         <div>
           <div class="logo-wrap"><img src="${LOGO_SRC}" alt="Academia Pukem Kwan" /></div>
           <div class="eyebrow">Academia Pukem Kwan &middot; Castro</div>
@@ -1249,11 +1269,11 @@ function renderHome(){
 }
 function renderQuickStart(){
   root.innerHTML = `
-  <div class="col">${belt()}
+  <div class="col">
+    <div class="topbar"><button class="link" onclick="goHome()">&larr; Inicio</button><h2>Combate rápido</h2><span></span></div>
     <div class="scroll">
       <div class="center" style="min-height:100%; flex:none;">
         <div>
-          <div class="eyebrow">Combate rápido</div>
           <h1 style="font-size:22px;">¿Qué modalidad?</h1>
           <p class="sub">Se crea un tablero con esquinas "Rojo" / "Azul" y arranca directo en Jefe de Mesa - sin tener que inscribir luchadores ni cerrar llave.</p>
         </div>
@@ -1261,11 +1281,10 @@ function renderQuickStart(){
           <button class="btn btn-white" onclick="startQuickMatch('PF')">Point Fighting</button>
           <button class="btn btn-white" onclick="startQuickMatch('LC')">Light Contact</button>
           <button class="btn btn-white" onclick="startQuickMatch('KL')">Kick Light</button>
-          <button class="link" onclick="goHome()" style="margin-top:6px;">&larr; Volver</button>
         </div>
       </div>
     </div>
-  ${belt()}</div>`;
+  </div>`;
 }
 function renderStopwatch(){
   root.innerHTML = `
@@ -1667,7 +1686,7 @@ function renderJefeControl(){
   const modeLabel = modalidadLabel(live.mode);
   root.innerHTML = `
   <div class="col jefecontrol">
-    <div class="topbar"><button class="link" onclick="goTo('jefe_selectCategory')">&larr; Combates</button><h2 style="font-size:15px;">${escapeHtml(cat.nombre)}</h2><span></span></div>
+    <div class="topbar"><button class="link" onclick="goTo('jefe_selectCategory')">&larr; Combates</button><h2 style="font-size:15px;">${escapeHtml(cat.nombre)}</h2>${HOME_BTN}</div>
     <div class="scroll">
       <div class="jc-head">
         <span class="eyebrow">${modeLabel}</span>
@@ -1714,6 +1733,7 @@ function renderJefeControl(){
            </div>`}
         <button class="link" onclick="resetLiveScores()">Reiniciar marcador y advertencias</button>
         <button class="link" onclick="goTo('display_view')">Ver pantalla pública &rarr;</button>
+        <button class="link" onclick="goTo('mesa_category',{catId:'${cat.id}'})">Ir a Mesa &rarr;</button>
       </div>
       <div style="height:20px;"></div>
     </div>
@@ -1751,7 +1771,7 @@ function renderDisplayLive(cat){
   <div class="col tvscale">${belt()}
     <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div>
       <div class="meta">Academia Pukem Kwan</div>
-      <div style="margin-top:6px;">${catBadges(cat)}</div>
+      <div class="tvsubtitle">${tvSubtitle(cat)}</div>
       ${live.suddenDeath ? `<div class="roundpill" style="background:var(--amber-dark); color:var(--amber-pale);">Tiempo extra - muerte subita</div>` : `<div class="roundpill">Asalto ${live.round} / ${live.roundsTotal}</div>`}
     </div>
     <div class="timer"><div class="t">${fmtTime(remaining)}</div></div>
@@ -1766,20 +1786,20 @@ function renderDisplayLive(cat){
       </div>
     </div>
     ${perJudgeBreakdown(live)}
-    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; Otra categoría</button><button class="link" onclick="goHome()">Salir</button></div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; Otra categoría</button><button class="link" onclick="goTo('mesa_category',{catId:'${cat.id}'})">Ir a Mesa</button><button class="link" onclick="goHome()">Salir</button></div>
   ${belt()}</div>`;
 }
 function renderDisplayBracket(cat){
   const rounds = buildBracket(cat);
   root.innerHTML = `
-  <div class="col">${belt()}
-    <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div><div class="meta">Academia Pukem Kwan</div><div style="margin-top:6px;">${catBadges(cat)}</div></div>
+  <div class="col tvscale">${belt()}
+    <div class="dtitle"><div class="logo-wrap sm"><img src="${LOGO_SRC}" alt="" /></div><div class="name">${escapeHtml(cat.nombre)}</div><div class="meta">Academia Pukem Kwan</div><div class="tvsubtitle">${tvSubtitle(cat)}</div></div>
     <div class="scroll">
       ${!cat.bracketClosed ? `<div class="emptylist">Inscripciones abiertas - la llave aún no se ha generado.<br>${cat.roster.length} inscrito(s) hasta ahora.</div>` :
         renderBracketTree(rounds)}
       <div style="height:20px;"></div>
     </div>
-    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; Otra categoría</button><button class="link" onclick="goHome()">Salir</button></div>
+    <div class="dbottom"><button class="link" onclick="goTo('display_selectCategory')">&larr; Otra categoría</button><button class="link" onclick="goTo('mesa_category',{catId:'${cat.id}'})">Ir a Mesa</button><button class="link" onclick="goHome()">Salir</button></div>
   ${belt()}</div>`;
 }
 /* Arbol de llave con lineas conectoras (Octavos->Cuartos->Semis->Final) para la
