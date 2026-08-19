@@ -1676,7 +1676,7 @@ function renderJefeSelectCategory(){
 function renderWinnerAnnouncement(cat, isPublic){
   const w = cat.lastWinner;
   root.innerHTML = `
-  <div class="col">${isPublic?belt():''}
+  <div class="col">${isPublic?FS_BTN:''}${isPublic?belt():''}
     <div class="${isPublic?'':'topbar'}">${isPublic?'':'<button class="link" onclick="goTo(\'jefe_selectCategory\')">&larr; Combates</button><span></span><span></span>'}</div>
     <div class="center" style="gap:10px;">
       <div class="eyebrow">${escapeHtml(cat.nombre)}</div>
