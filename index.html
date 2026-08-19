@@ -582,13 +582,6 @@ async function loadTorneo(){
   }catch(e){ if (!state.torneo) state.torneo = emptyTorneo(); }
   renderOrTick();
 }
-async function writeTorneo(next){
-  state.torneo = next;
-  writeSeq++;
-  lastLocalWriteAt = Date.now();
-  render();
-  try{ await fetch(TORNEO_PATH, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(next)}); }catch(e){}
-}
 /* Escribe SOLO la categoria que cambio (path propio en Firebase), no el documento
    completo. Con un solo tatami esto no se notaba, pero con varios tatamis y jueces
    escribiendo al mismo tiempo, sobreescribir /torneo.json entero cada vez hace que
@@ -857,24 +850,29 @@ function vote(color){
   setTimeout(()=>{ state.flash=''; render(); }, 300);
   const cat = currentCat();
   if (!cat || !cat.live) return;
+  const catId = cat.id;
   const optimisticLive = applyVote(cat.live, color, state.judgeId);
-  state.torneo = {...state.torneo, categories:{...state.torneo.categories, [cat.id]: {...cat, live:optimisticLive}}};
+  state.torneo = {...state.torneo, categories:{...state.torneo.categories, [catId]: {...cat, live:optimisticLive}}};
   writeSeq++;
+  lastLocalWriteAt = Date.now();
   render();
   const seqAtStart = writeSeq;
+  /* Ademas del optimismo local, esta funcion vuelve a leer el nodo de ESTA
+     categoria (ya no todo el documento /torneo.json, que era una escritura
+     mas ancha de lo necesario y quedaba fuera de las reglas de Firebase
+     restringidas por categoria) antes de escribir: con varios jueces
+     votando casi al mismo tiempo en el mismo combate, dos votos que llegan
+     juntos podrian pisarse si cada uno escribe solo sobre lo que tenia en
+     su propia pantalla en vez de sobre el ultimo estado real. */
   (async ()=>{
     try{
-      const res = await fetch(TORNEO_PATH);
+      const res = await fetch(FIREBASE_URL + '/torneo/categories/' + catId + '.json');
       const data = await res.json();
-      const t = data ? normalizeTorneo(data) : state.torneo;
-      const c = t.categories[cat.id];
+      const c = data ? normalizeCategory(data) : state.torneo.categories[catId];
       if (!c || !c.live) return;
       const next = applyVote(c.live, color, state.judgeId);
-      const finalT = {...t, categories:{...t.categories, [cat.id]: {...c, live:next}}};
       if (writeSeq !== seqAtStart) return;
-      await fetch(TORNEO_PATH, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(finalT)});
-      writeSeq++;
-      state.torneo = finalT; render();
+      putCategory(catId, {...c, live: next});
     }catch(e){}
   })();
 }
