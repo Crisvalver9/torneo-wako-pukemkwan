@@ -1,0 +1,91 @@
+{
+  "categories": {
+    "cat_g2bcx8a": {
+      "id": "cat_g2bcx8a",
+      "tatami": "Tatami 1",
+      "nombre": "Seniors · Masculino · -63kg · Cinturón Negro",
+      "modalidad": "PF",
+      "divisionEdad": "S",
+      "sexo": "M",
+      "peso": "-63kg",
+      "cinturon": "negro",
+      "numJudges": 3,
+      "numRounds": 2,
+      "roundDuration": 90,
+      "roster": [
+        {
+          "name": "Cristobal Valverde",
+          "club": ""
+        },
+        {
+          "name": "Marcelo Vergara",
+          "club": ""
+        }
+      ],
+      "bracketClosed": true,
+      "slots": [
+        {
+          "name": "Cristobal Valverde",
+          "club": ""
+        },
+        {
+          "name": "Marcelo Vergara",
+          "club": ""
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "results": {
+        "R16-1": {
+          "winner": "A",
+          "scoreA": 2,
+          "scoreB": 0,
+          "manual": false,
+          "disq": false
+        }
+      },
+      "live": null,
+      "log": [
+        {
+          "ts": 1786430664295,
+          "text": "R16-1: Cristobal Valverde gana 2-0"
+        },
+        {
+          "ts": 1786430664291,
+          "text": "Llave generada con 2 luchador(es)"
+        },
+        {
+          "ts": 1786430664291,
+          "text": "Inscrito: Marcelo Vergara"
+        },
+        {
+          "ts": 1786430664290,
+          "text": "Inscrito: Cristobal Valverde"
+        }
+      ],
+      "createdAt": 1786430664289,
+      "lastWinner": {
+        "matchId": "R16-1",
+        "winnerName": "Cristobal Valverde",
+        "winnerClub": "",
+        "loserName": "Marcelo Vergara",
+        "loserClub": "",
+        "scoreA": 2,
+        "scoreB": 0,
+        "disq": false
+      }
+    }
+  }
+}
