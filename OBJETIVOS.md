@@ -153,3 +153,42 @@ Sesión posterior a la redacción de §1-9, misma fecha. Cierra los puntos 2 y 3
 **10.4. Punto 1 del objetivo SMART (reglas de Firebase) — decidido: se restringió.** Ver §10.6 para el cambio real, aplicado más tarde el mismo día.
 
 **10.5. Referencia de competencia (pedido nuevo del usuario, no parte del objetivo SMART original).** El usuario compartió `https://live-tatami.jorqueraacademy.workers.dev` ("Live Tatami", de Cristian Jorquera) como referencia. Es evidencia de primera mano — no de segunda mano como el resto de §4.4 — de que existe al menos un competidor directo activo en el mismo nicho (torneos de artes marciales en Chile): landing pública sin necesidad de login para el público, con dos flujos de acceso diferenciados ("Ingreso Staff" para jueces/mesa, "Ingreso Coach" para inscribir atletas y ver llaves), versión visible en el propio sitio (v147, sugiere iteración activa y sostenida), y marca registrada en INAPI Chile con aviso de copyright explícito. No se registró usuario ni se navegó más allá de la landing pública — no corresponde replicar su código ni su diseño, solo se deja constancia de que existe como referencia directa de mercado, algo que §4.4 señalaba como ausente del repo hasta ahora.
+
+**10.6. Reglas de Firebase restringidas por path — decidido, aplicado y verificado.** El usuario pidió el detalle del tradeoff (§ anterior de este documento, antes de esta sección) y después confirmó "hazlo". Reglas propuestas por Claude, **publicadas por el usuario directamente en la consola de Firebase** (Claude no tiene ni debe tener credenciales de esa cuenta; el propio clasificador de permisos del entorno bloqueó incluso guardar el JSON de las reglas como archivo local, por ser contenido de configuración de seguridad — se le pasaron al usuario en el chat en vez de en un archivo):
+
+```json
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "torneo": {
+      ".read": true,
+      "categories": { "$catId": {
+        ".write": true,
+        ".validate": "newData.hasChild('id') && newData.child('id').val() === $catId"
+      }},
+      "pin": {
+        ".write": true,
+        ".validate": "newData.val() === null || newData.isString()"
+      }
+    }
+  }
+}
+```
+
+Efecto: la raíz de la base y cualquier path fuera de `/torneo` quedan cerrados a lectura y escritura (cierra el riesgo real más probable — un bot que escanea Firebase abiertas al azar y las vacía o las llena de basura). `/torneo` sigue siendo de lectura pública sin restricción (necesario: Pantalla Pública no tiene login). Escritura sigue sin autenticación real dentro de `/torneo/categories/*` y `/torneo/pin` — cualquiera que lea el código fuente público puede seguir escribiendo ahí exactamente como la app. Eso es una limitación conocida y aceptada, no un descuido: cerrarla del todo requeriría Firebase Auth, que contradice la decisión ya tomada en §5/§6 de no tener cuentas.
+
+Verificación hecha después de que el usuario publicó las reglas, con pruebas directas contra la base de producción (sin usar ninguna credencial de la cuenta del usuario — todas son las mismas llamadas HTTP públicas que ya hace la app):
+
+| Prueba | Resultado esperado | Resultado real |
+|---|---|---|
+| Leer `/` (raíz) | bloqueado | `401 Permission denied` ✓ |
+| Leer `/torneo.json` | permitido | `200`, datos reales ✓ |
+| Escribir en `/` (simular bot que borra todo) | bloqueado | `401 Permission denied` ✓ |
+| Escribir categoría con `id` que no coincide con el path | bloqueado | `401 Permission denied` ✓ |
+| Escribir categoría con `id` correcto | permitido | `200` ✓ |
+| Escribir PIN con un tipo que no es texto | bloqueado | `401 Permission denied` ✓ |
+| Escribir en un path random fuera de `/torneo` | bloqueado | `401 Permission denied` ✓ |
+| Flujo real de la app (crear categoría, inscribir 4, cerrar llave, resolver hasta podio, todo con las funciones reales de la app, no llamadas crudas) | funciona igual que antes de las reglas | podio 4/4 completo, sin errores de consola nuevos ✓ |
+
+Categorías de prueba usadas para esto (`cat_ruletest1`, "Prueba reglas") fueron borradas al terminar; producción quedó otra vez solo con "Combate rápido". Con esto, los 3 puntos del objetivo SMART original de §3 están cerrados.
